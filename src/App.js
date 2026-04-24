@@ -6,6 +6,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Menu from './screens/Menu';
 import Send from './screens/Send'
 import Receive from './screens/Receive'
+import SelectCategory from './screens/SelectCategory'
+import AppTab from '../components/AppTab';
 
 // to use downloaded fonts
 import { useFonts } from 'expo-font'
@@ -13,7 +15,7 @@ import { useFonts } from 'expo-font'
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  
+
 // function to use downloaded fonts
 const [fontsLoaded] = useFonts({
   'Poppins': require('../assets/fonts/Poppins-Regular.ttf'),
@@ -27,6 +29,8 @@ if (!fontsLoaded) return null;
         <Stack.Screen name="Menu" component={Menu} options={{ headerShown: false}}/>
         <Stack.Screen name="Send" component={Send} options={{ headerShown: false}}/>
         <Stack.Screen name="Receive" component={Receive} options={{ headerShown: false}}/>
+        <Stack.Screen name="SelectCategory" component={SelectCategory} options={{ headerShown: false}}/>
+        <Stack.Screen name="AppTab" component={AppTab} options={{ headerShown: false}}/>
 
       </Stack.Navigator>
     </NavigationContainer>

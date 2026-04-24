@@ -12,7 +12,7 @@ const Menu = ({navigation}) => {
 
 
       {/* Buttons */}
-      <CustomButton borderRadius={10} height='63' width='300' title="Send" backgroundColor="#D9D9D9"  textColor="#000000" onPress={() => navigation.navigate('Send')}/>
+      <CustomButton borderRadius={10} height='63' width='300' title="Send" backgroundColor="#D9D9D9"  textColor="#000000" onPress={() => navigation.navigate('SelectCategory')}/>
       <CustomButton borderRadius={10} height='63' width='300' title="Receive" backgroundColor="#D9D9D9"  textColor="#000000" onPress={() => navigation.navigate('Receive')}/> 
       <CustomButton borderRadius='100%' title="+" height='63' width='63' backgroundColor="#D9D9D9" />
       <Text>Invite someone</Text>
