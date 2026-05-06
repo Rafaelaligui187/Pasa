@@ -17,6 +17,5 @@ logo: {
     height: 15,
     left: 20,
     alignSelf: 'flex-start',
-    marginTop: 30,
   }
 })

@@ -1,84 +1,131 @@
-import { 
-  SafeAreaView, 
-  ScrollView, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Text, 
-  View, 
-  Image 
+import {
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  FlatList
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import * as MediaLibrary from 'expo-media-library';
+import * as DocumentPicker from 'expo-document-picker';
 
 const SelectCategory = () => {
 
   const [media, setMedia] = useState([]);
   const [selected, setSelected] = useState('Photos');
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
-  const categories = ['Photos', 'Files', 'Audio', 'Video'];
+  const categories = ['Photos', 'Videos', 'Audio', 'Files'];
 
-  // ✅ Permission
   const requestPermission = async () => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
-
     if (status !== 'granted') {
       alert('Permission needed to access media');
+      return false;
     }
+
+    return true;
   };
 
-  // ✅ Load Media
+  // ✅ Load media depending on category
   const loadMedia = async () => {
+    if (selected === 'Files') {
+      setMedia([]);
+      return;
+    }
+
+    const typeMap = {
+      Photos: MediaLibrary.MediaType.photo,
+      Videos: MediaLibrary.MediaType.video,
+      Audio: MediaLibrary.MediaType.audio,
+    };
+
     const result = await MediaLibrary.getAssetsAsync({
-      mediaType: MediaLibrary.MediaType.all,
-      first: 1000,
+      mediaType: typeMap[selected],
+      first: 50,
       sortBy: [MediaLibrary.SortBy.creationTime],
     });
 
     setMedia(result.assets);
   };
 
-  // ✅ Filter
-  const filterMedia = () => {
-    if (selected === 'Photos') {
-      return media.filter(item => item.mediaType === 'photo');
-    }
+  useEffect(() => {
+    (async () => {
+      const granted = await requestPermission();
+      if (granted) {
+        await loadMedia();
+      }
+    })();
+  }, [selected]);
 
-    if (selected === 'Video') {
-      return media.filter(item => item.mediaType === 'video');
-    }
 
-    if (selected === 'Audio') {
-      return media.filter(item => item.mediaType === 'audio');
-    }
 
-    if (selected === 'Files') {
-      return media; // fallback
-    }
+  // ✅ File picker (for Files tab)
+  const pickFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync();
 
-    return []; // ✅ prevent crash
+    if (!result.canceled) {
+      setSelectedFiles([...selectedFiles, result.assets[0]]);
+    }
   };
 
-  // ✅ Load on start
-  useEffect(() => {
-    requestPermission();
-    loadMedia();
-  }, []);
+  // ✅ Toggle select
+  const toggleSelect = (item) => {
+    const exists = selectedFiles.find(f => f.id === item.id);
+
+    if (exists) {
+      setSelectedFiles(selectedFiles.filter(f => f.id !== item.id));
+    } else {
+      setSelectedFiles([...selectedFiles, item]);
+    }
+  };
+
+  // ✅ Render grid item
+  const renderItem = ({ item }) => {
+    const isSelected = selectedFiles.find(f => f.id === item.id);
+
+    return (
+      <TouchableOpacity
+        style={{ flex: 1 / 3, padding: 2 }}
+        onPress={() => toggleSelect(item)}
+      >
+        {item.mediaType !== 'audio' ? (
+          <Image
+            source={{ uri: item.uri }}
+            style={{ width: '100%', height: 120 }}
+          />
+        ) : (
+          <View style={styles.audioBox}>
+            <Text>🎵</Text>
+          </View>
+        )}
+
+        {/* ✅ Selection overlay */}
+        {isSelected && (
+          <View style={styles.check}>
+            <Text style={{ color: '#fff' }}>✓</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
+    
     <SafeAreaView>
-      <Header />
-
+      
+    <Header />
       <View style={styles.container}>
 
         {/* CATEGORY */}
-        <ScrollView horizontal contentContainerStyle={styles.scrollContainer}>
+        <ScrollView horizontal style={styles.scrollContainer}>
           {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              onPress={() => setSelected(cat)}
-            >
+            <TouchableOpacity key={cat} onPress={() => setSelected(cat)}>
               <Text style={[
                 styles.categoryText,
                 selected === cat && styles.selectedText
@@ -90,28 +137,20 @@ const SelectCategory = () => {
         </ScrollView>
 
         {/* CONTENT */}
-        <ScrollView style={{ width: '100%' }}>
-          <View>
-
-            {filterMedia().map((item) => (
-              <View key={item.id} style={{ padding: 10 }}>
-
-                {/* Thumbnail */}
-                {item.mediaType !== 'audio' && (
-                  <Image
-                    source={{ uri: item.uri }}
-                    style={{ width: 100, height: 100 }}
-                  />
-                )}
-
-                <Text>{item.filename}</Text>
-                <Text>{item.mediaType}</Text>
-
-              </View>
-            ))}
-
+        {selected === 'Files' ? (
+          <View style={{ marginTop: 30 }}>
+            <TouchableOpacity onPress={pickFile} style={styles.fileBtn}>
+              <Text style={{ color: '#fff', }}>Pick File</Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
+        ) : (
+          <FlatList
+            data={media}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            renderItem={renderItem}
+          />
+        )}
 
       </View>
     </SafeAreaView>
@@ -125,15 +164,35 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   scrollContainer: {
-    marginTop: 30,
+    marginTop: 20,
+    marginBottom: 10
   },
   categoryText: {
-    marginHorizontal: 10,
-    fontSize: 16,
+    marginHorizontal: 15,
+    fontSize: 16
   },
   selectedText: {
-    color: '#000',
-    textDecorationLine: 'underline',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    textDecorationLine: 'underline'
   },
+  audioBox: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#eee'
+  },
+  check: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'green',
+    borderRadius: 10,
+    padding: 3
+  },
+  fileBtn: {
+    backgroundColor: 'black',
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: '#5B5B5B'
+  }
 });
