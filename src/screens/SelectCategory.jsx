@@ -7,7 +7,8 @@ import {
   Image,
   FlatList,
   RefreshControl,
-  Platform
+  Platform,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -171,7 +172,7 @@ const SelectCategory = () => {
         {item.mediaType !== 'audio' ? (
           <Image
             source={{ uri: item.uri }}
-            style={{ width: 120, height: 120, borderRadius: 5, }}
+            style={{ width: '100%', height: 120, borderRadius: 5, }}
           />
         ) : (
           <View style={styles.audioBox}>
@@ -208,7 +209,6 @@ const SelectCategory = () => {
       
     <Header />
       <View style={styles.container}>
-
         {/* CATEGORY */}
         <ScrollView horizontal style={styles.scrollContainer}>
           {categories.map((cat) => (
@@ -224,6 +224,8 @@ const SelectCategory = () => {
         </ScrollView>
 
         {/* CONTENT */}
+        {/* ///Search Input */}
+        <TextInput placeholder="Search" style={styles.SearchInput} />
         {selected === 'Files' ? (
           <View style={{ marginTop: 30 }}>
             <TouchableOpacity onPress={pickFile} style={styles.fileBtn}>
@@ -251,7 +253,6 @@ export default SelectCategory;
 
 const styles = StyleSheet.create({
   container: {
-    
   },
   scrollContainer: {
     marginTop: 20,
@@ -260,6 +261,8 @@ const styles = StyleSheet.create({
   categoryText: {
     marginHorizontal: 15,
     fontSize: 16,
+    alignSelf: 'center',
+    textAlign: 'center',
   },
   selectedText: {
     fontWeight: 'bold',
@@ -269,7 +272,7 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#5B5B5B',
     borderRadius: 5,
   },
   audioEmoji: {
@@ -300,13 +303,19 @@ const styles = StyleSheet.create({
     top: 5,
     right: 5,
     backgroundColor: '#5B5B5B',
-    borderRadius: 10,
-    padding: 3
+    padding: 5
   },
   fileBtn: {
     backgroundColor: 'black',
     padding: 15,
     borderRadius: 10,
     backgroundColor: '#5B5B5B'
-  }
+  },
+  SearchInput: {
+     margin: 8, 
+     padding: 10, 
+     borderColor: '#5B5B5B', 
+     borderRadius: 5, color: 'black',
+     borderWidth: 1, 
+  },
 });
