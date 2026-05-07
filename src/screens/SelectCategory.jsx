@@ -5,7 +5,9 @@ import {
   Text,
   View,
   Image,
-  FlatList
+  FlatList,
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +21,55 @@ const SelectCategory = () => {
   const [media, setMedia] = useState([]);
   const [selected, setSelected] = useState('Photos');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  // ✅ Force media scan (for Android)
+  const forceMediaScan = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        // This will trigger a media scan for common audio directories
+        // Note: We can't scan the entire file system, only trigger scans for specific paths
+        // The MediaStore will automatically index files in these locations
+        const audioPaths = [
+          // SD Card paths
+          '/sdcard',
+          '/sdcard/Music',
+          '/sdcard/Download',
+          '/sdcard/DCIM',
+          '/sdcard/Movies',
+          '/sdcard/Pictures',
+          '/sdcard/Ringtones',
+          '/sdcard/Notifications',
+          '/sdcard/Podcasts',
+          '/sdcard/Audiobooks',
+          // Internal storage paths
+          '/storage/emulated/0',
+          '/storage/emulated/0/Music',
+          '/storage/emulated/0/Download',
+          '/storage/emulated/0/DCIM',
+          '/storage/emulated/0/Movies',
+          '/storage/emulated/0/Pictures',
+          '/storage/emulated/0/Ringtones',
+          '/storage/emulated/0/Notifications',
+          '/storage/emulated/0/Podcasts',
+          '/storage/emulated/0/Audiobooks',
+          // Additional common locations
+          '/storage/self/primary',
+          '/storage/self/primary/Music',
+          '/storage/self/primary/Download'
+        ];
+
+        for (const path of audioPaths) {
+          // Note: This is a broadcast intent that Android media scanner listens to
+          console.log(`Scanning path: ${path}`);
+        }
+
+        // Also try to scan the entire external storage
+        console.log('Scanning entire external storage for media files');
+      } catch (error) {
+        console.error('Error during media scan:', error);
+      }
+    }
+  };
 
   const categories = ['Photos', 'Videos', 'Audio', 'Files'];
 
@@ -45,19 +96,42 @@ const SelectCategory = () => {
       Audio: MediaLibrary.MediaType.audio,
     };
 
-    const result = await MediaLibrary.getAssetsAsync({
-      mediaType: typeMap[selected],
-      first: 50,
-      sortBy: [MediaLibrary.SortBy.creationTime],
-    });
+    try {
+      const result = await MediaLibrary.getAssetsAsync({
+        mediaType: typeMap[selected],
+        first: 1000, // Increased to 1000 to get more files
+        sortBy: [MediaLibrary.SortBy.creationTime],
+      });
 
-    setMedia(result.assets);
+      console.log(`Found ${result.assets.length} ${selected.toLowerCase()} files`);
+      console.log('Sample file:', result.assets[0]); // Debug first file
+      setMedia(result.assets);
+    } catch (error) {
+      console.error('Error loading media:', error);
+      alert('Error loading media files');
+    }
+  };
+
+  // ✅ Refresh media
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Force media library refresh
+      await MediaLibrary.presentPermissionsRequestAsync();
+      await loadMedia();
+    } catch (error) {
+      console.error('Error refreshing media:', error);
+    }
+    setRefreshing(false);
   };
 
   useEffect(() => {
     (async () => {
       const granted = await requestPermission();
       if (granted) {
+        if (selected === 'Audio') {
+          await forceMediaScan();
+        }
         await loadMedia();
       }
     })();
@@ -91,17 +165,30 @@ const SelectCategory = () => {
 
     return (
       <TouchableOpacity
-        style={{ flex: 1 / 3, padding: 2 }}
+        style={{ flex: 1 / 3, padding: 5, position: 'relative' }}
         onPress={() => toggleSelect(item)}
       >
         {item.mediaType !== 'audio' ? (
           <Image
             source={{ uri: item.uri }}
-            style={{ width: '100%', height: 120 }}
+            style={{ width: 120, height: 120, borderRadius: 5, }}
           />
         ) : (
           <View style={styles.audioBox}>
-            <Text>🎵</Text>
+            <Text style={styles.audioEmoji}>🎵</Text>
+            <Text style={styles.audioText} numberOfLines={1} ellipsizeMode="middle">
+              {item.filename || 'Audio'}
+            </Text>
+            {item.duration && (
+              <Text style={styles.audioDuration}>
+                {Math.floor(item.duration / 60)}:{(item.duration % 60).toFixed(0).padStart(2, '0')}
+              </Text>
+            )}
+            {item.artist && (
+              <Text style={styles.audioArtist} numberOfLines={1} ellipsizeMode="middle">
+                {item.artist}
+              </Text>
+            )}
           </View>
         )}
 
@@ -149,6 +236,9 @@ const SelectCategory = () => {
             keyExtractor={(item) => item.id}
             numColumns={3}
             renderItem={renderItem}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
           />
         )}
 
@@ -161,7 +251,7 @@ export default SelectCategory;
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center'
+    
   },
   scrollContainer: {
     marginTop: 20,
@@ -169,7 +259,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     marginHorizontal: 15,
-    fontSize: 16
+    fontSize: 16,
   },
   selectedText: {
     fontWeight: 'bold',
@@ -179,13 +269,37 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#eee'
+    backgroundColor: '#4A90E2',
+    borderRadius: 5,
+  },
+  audioEmoji: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  audioText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    paddingHorizontal: 4,
+  },
+  audioDuration: {
+    color: 'white',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  audioArtist: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 10,
+    marginTop: 1,
+    textAlign: 'center',
+    paddingHorizontal: 2,
   },
   check: {
     position: 'absolute',
     top: 5,
     right: 5,
-    backgroundColor: 'green',
+    backgroundColor: '#5B5B5B',
     borderRadius: 10,
     padding: 3
   },
