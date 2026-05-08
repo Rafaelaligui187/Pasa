@@ -36,7 +36,7 @@ const SelectCategory = ({ navigation }) => {
   const handleSend = () => {
     navigation.navigate('Send', { selectedFiles });
   };
-
+  ///ADD Apps soon
   const categories = ['Photos', 'Videos', 'Audio', 'Files'];
 
   // =============================
@@ -285,37 +285,35 @@ const SelectCategory = ({ navigation }) => {
       <Header />
 
       <View style={styles.container}>
-        {/* CATEGORY */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.scrollContainer}
-        >
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              onPress={() => setSelected(cat)}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  selected === cat && styles.selectedText,
-                ]}
-              >
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={styles.headerWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {categories.map((cat) => (
+              <TouchableOpacity key={cat} onPress={() => setSelected(cat)}>
+                <Text
+                  style={[
+                    styles.categoryText,
+                    selected === cat && styles.selectedText,
+                  ]}
+                >
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-        {/* SEARCH */}
-        <TextInput
-          placeholder="Search files"
-          style={styles.searchInput}
-          value={search}
-          onChangeText={setSearch}
-        />
-        
+          <TextInput
+            placeholder="Search files"
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
         {/* LOADING */}
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -330,6 +328,8 @@ const SelectCategory = ({ navigation }) => {
             style={styles.list}
             contentContainerStyle={styles.listContent}
             columnWrapperStyle={styles.columnWrapper}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -349,7 +349,7 @@ const SelectCategory = ({ navigation }) => {
             height="55"
             borderRadius={10}
             onPress={handleSend}
-            style={{ marginTop: 10 }}
+            style={{ marginTop: 10, marginBottom: 10 }}
           />
         )}
         <CustomButton
@@ -376,17 +376,31 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     flex: 1,
   },
+  listHeader: {
+    paddingBottom: 10,
+  },
+  headerWrapper: {
+    paddingBottom: 10,
+    backgroundColor: '#F2F2F2',
+    paddingBottom: 10,
+    paddingTop: 10,
+
+  },
   scrollContainer: {
-    marginBottom: 10,
+    marginBottom: 0,
+    paddingHorizontal: 10,
   },
   categoryText: {
     marginRight: 20,
     fontSize: 16,
     color: '#777',
+    paddingBottom: 10,
+    textAlign: 'center'
   },
   selectedText: {
     color: '#000',
     fontWeight: 'bold',
+    textDecorationLine: 'underline'
   },
   searchInput: {
     borderWidth: 1,
@@ -394,6 +408,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 15,
     height: 45,
+    marginTop: 0,
   },
   itemContainer: {
     flex: 1,
@@ -433,22 +448,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     textAlign: 'center',
   },
   list: {
-   
+    flex: 1,
   },
   listContent: {
-    paddingBottom: 20,
+    flexGrow: 1,
+    paddingBottom: 180,
   },
   columnWrapper: {
     justifyContent: 'space-between',
   },
   footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     padding: 10,
     backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
 });
 

@@ -35,6 +35,12 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "11f12159-5ed2-42b2-a55b-bb8cf891c878"
+      }
+    },
+    "owner": "rafaelaligui187"
   }
 }

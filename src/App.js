@@ -9,6 +9,7 @@ import Receive from './screens/Receive'
 import SelectCategory from './screens/SelectCategory'
 import AppTab from '../components/AppTab';
 
+
 // to use downloaded fonts
 import { useFonts } from 'expo-font'
 
@@ -31,6 +32,8 @@ if (!fontsLoaded) return null;
         <Stack.Screen name="Receive" component={Receive} options={{ headerShown: false}}/>
         <Stack.Screen name="SelectCategory" component={SelectCategory} options={{ headerShown: false}}/>
         <Stack.Screen name="AppTab" component={AppTab} options={{ headerShown: false}}/>
+
+        
 
       </Stack.Navigator>
     </NavigationContainer>
