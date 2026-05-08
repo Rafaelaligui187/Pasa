@@ -21,13 +21,21 @@ import * as MediaLibrary from 'expo-media-library';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 
-const SelectCategory = () => {
+const SelectCategory = ({ navigation }) => {
   const [media, setMedia] = useState([]);
   const [selected, setSelected] = useState('Photos');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleCancel = () => {
+    navigation.navigate('Menu');
+  };
+
+  const handleSend = () => {
+    navigation.navigate('Send', { selectedFiles });
+  };
 
   const categories = ['Photos', 'Videos', 'Audio', 'Files'];
 
@@ -319,6 +327,9 @@ const SelectCategory = () => {
             keyExtractor={(item) => item.id.toString()}
             numColumns={3}
             renderItem={renderItem}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            columnWrapperStyle={styles.columnWrapper}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -327,9 +338,31 @@ const SelectCategory = () => {
             }
           />
         )}
-        
       </View>
-      
+      <View style={styles.footer}>
+        {selectedFiles.length > 0 && (
+          <CustomButton
+            title="Send"
+            backgroundColor="#5B5B5B"
+            textColor="#fff"
+            width="100%"
+            height="55"
+            borderRadius={10}
+            onPress={handleSend}
+            style={{ marginTop: 10 }}
+          />
+        )}
+        <CustomButton
+          title="Cancel"
+          backgroundColor="#D9D9D9"
+          textColor="#000"
+          width="100%"
+          height="55"
+          borderRadius={10}
+          onPress={handleCancel}
+          style={{ marginTop: 0 }}
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -338,7 +371,10 @@ export default SelectCategory;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    paddingTop: 0,
+    paddingHorizontal: 10,
+    paddingBottom: 0,
+    flex: 1,
   },
   scrollContainer: {
     marginBottom: 10,
@@ -360,7 +396,8 @@ const styles = StyleSheet.create({
     height: 45,
   },
   itemContainer: {
-    flex: 1 / 3,
+    flex: 1,
+    maxWidth: '32%',
     padding: 5,
   },
   image: {
@@ -399,6 +436,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     textAlign: 'center',
+  },
+  list: {
+   
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+  },
+  footer: {
+    padding: 10,
+    backgroundColor: '#fff',
   },
 });
 
