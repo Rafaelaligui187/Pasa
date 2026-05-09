@@ -10,10 +10,12 @@ import {
   Platform,
   TextInput,
   ActivityIndicator,
+  Input,
 } from 'react-native';
 import CustomButton from '../../components/CustomButton';
+import CheckBox from 'expo-checkbox';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/Header';
 
@@ -28,6 +30,8 @@ const SelectCategory = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const selectedIds = useMemo(() => new Set(selectedFiles.map(f => f.id)), [selectedFiles]);
 
   const handleCancel = () => {
     navigation.navigate('Menu');
@@ -199,15 +203,16 @@ const SelectCategory = ({ navigation }) => {
   // =============================
   // SELECT FILE
   // =============================
-  const toggleSelect = (item) => {
-    const exists = selectedFiles.find((f) => f.id === item.id);
-
-    if (exists) {
-      setSelectedFiles(selectedFiles.filter((f) => f.id !== item.id));
-    } else {
-      setSelectedFiles([...selectedFiles, item]);
-    }
-  };
+  const toggleSelect = useCallback((item) => {
+    setSelectedFiles((prev) => {
+      const exists = prev.find((f) => f.id === item.id);
+      if (exists) {
+        return prev.filter((f) => f.id !== item.id);
+      } else {
+        return [...prev, item];
+      }
+    });
+  }, []);
 
   // =============================
   // INITIAL LOAD
@@ -234,8 +239,8 @@ const SelectCategory = ({ navigation }) => {
   // =============================
   // RENDER ITEM
   // =============================
-  const renderItem = ({ item }) => {
-    const isSelected = selectedFiles.find((f) => f.id === item.id);
+  const renderItem = useCallback(({ item }) => {
+    const isSelected = selectedIds.has(item.id);
 
     const isImage =
       item.mediaType === 'photo' ||
@@ -278,7 +283,7 @@ const SelectCategory = ({ navigation }) => {
         )}
       </TouchableOpacity>
     );
-  };
+  }, [selectedIds, selected, toggleSelect]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -312,6 +317,7 @@ const SelectCategory = ({ navigation }) => {
             value={search}
             onChangeText={setSearch}
           />
+        
         </View>
 
         {/* LOADING */}
