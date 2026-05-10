@@ -504,23 +504,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F2',
     paddingBottom: 10,
     paddingTop: 10,
-
+    
   },
   scrollContainer: {
     marginBottom: 0,
     paddingHorizontal: 10,
+    flex: 1,
+    justifyContent: 'center'
   },
   categoryText: {
     marginRight: 20,
     fontSize: 16,
     color: '#777',
     paddingBottom: 10,
-    textAlign: 'center'
   },
   selectedText: {
     color: '#000',
     fontWeight: 'bold',
-    textDecorationLine: 'underline'
+    textDecorationLine: 'underline',
   },
   searchInput: {
     borderWidth: 1,
