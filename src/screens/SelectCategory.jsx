@@ -10,7 +10,7 @@ import {
   Platform,
   TextInput,
   ActivityIndicator,
-  Input,
+  PermissionsAndroid,
 } from 'react-native';
 import CustomButton from '../../components/CustomButton';
 import CheckBox from 'expo-checkbox';
@@ -20,13 +20,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/Header';
 
 import * as MediaLibrary from 'expo-media-library';
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+
+const folderIcon = require('../../assets/Images/default_folder_icon.png');
 
 const SelectCategory = ({ navigation }) => {
   const [media, setMedia] = useState([]);
   const [selected, setSelected] = useState('Photos');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [directoryEntries, setDirectoryEntries] = useState([]);
+  const [currentDir, setCurrentDir] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,6 +58,112 @@ const SelectCategory = ({ navigation }) => {
     }
 
     return true;
+  };
+
+  const requestFilePermission = async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+
+    try {
+      const status = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        {
+          title: 'Storage Permission',
+          message: 'PASA needs access to device storage to browse files.',
+          buttonPositive: 'OK',
+        }
+      );
+
+      return status === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (error) {
+      console.log('Storage permission error:', error);
+      return false;
+    }
+  };
+
+  const getStorageRoots = () => {
+    return [
+      {
+        id: FileSystem.documentDirectory,
+        uri: FileSystem.documentDirectory,
+        path: FileSystem.documentDirectory,
+        filename: 'App Files',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+    ];
+  };
+
+  const loadRootDirectories = async () => {
+    setLoading(true);
+    const roots = getStorageRoots();
+    setDirectoryEntries(roots);
+    setCurrentDir(null);
+    setLoading(false);
+  };
+
+  const loadDirectory = async (dirPath) => {
+    setLoading(true);
+    try {
+      const fileNames = await FileSystem.readDirectoryAsync(dirPath);
+      const entries = await Promise.all(
+        fileNames.map(async (name) => {
+          const path = dirPath + name;
+          const info = await FileSystem.getInfoAsync(path);
+          return {
+            id: path,
+            uri: info.isDirectory ? path : path,
+            path,
+            filename: name,
+            isDirectory: info.isDirectory,
+            mediaType: info.isDirectory ? 'folder' : getCategory(name).toLowerCase(),
+          };
+        })
+      );
+
+      const sorted = entries.sort((a, b) => {
+        if (a.isDirectory === b.isDirectory) {
+          return a.filename.localeCompare(b.filename);
+        }
+        return a.isDirectory ? -1 : 1;
+      });
+
+      setDirectoryEntries(sorted);
+      setCurrentDir(dirPath);
+    } catch (error) {
+      console.log('Read directory error:', error);
+      setDirectoryEntries([]);
+    }
+    setLoading(false);
+  };
+
+  const openDirectory = async (item) => {
+    if (!item.isDirectory) {
+      return;
+    }
+
+    await loadDirectory(item.path || item.uri);
+  };
+
+  const goBack = async () => {
+    if (!currentDir) {
+      return;
+    }
+
+    const rootPaths = getStorageRoots().map((root) => root.path);
+    if (rootPaths.includes(currentDir)) {
+      await loadRootDirectories();
+      return;
+    }
+
+    const parent = currentDir.replace(/\/[^\/]+\/?$/, '');
+    if (!parent) {
+      await loadRootDirectories();
+      return;
+    }
+
+    await loadDirectory(parent + '/');
   };
 
   // =============================
@@ -122,26 +231,6 @@ const SelectCategory = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // -------------------------
-      // FILES TAB
-      // -------------------------
-      if (selected === 'Files') {
-        const result = await DocumentPicker.getDocumentAsync({
-          multiple: true,
-          copyToCacheDirectory: true,
-        });
-
-        if (!result.canceled) {
-          setMedia(result.assets);
-        }
-
-        setLoading(false);
-        return;
-      }
-
-      // -------------------------
-      // MEDIA LIBRARY PAGINATION
-      // -------------------------
       const typeMap = {
         Photos: MediaLibrary.MediaType.photo,
         Videos: MediaLibrary.MediaType.video,
@@ -161,22 +250,11 @@ const SelectCategory = ({ navigation }) => {
         });
 
         allAssets = [...allAssets, ...result.assets];
-
         hasNextPage = result.hasNextPage;
         after = result.endCursor;
       }
 
-      // -------------------------
-      // OPTIONAL EXTRA FILE SCAN
-      // -------------------------
-      // NOTE:
-      // Expo Go has limited access.
-      // Development build works better.
-
-      const scannedFiles = await scanDirectory(
-        FileSystem.documentDirectory
-      );
-
+      const scannedFiles = await scanDirectory(FileSystem.documentDirectory);
       const filteredScanned = scannedFiles.filter(
         (item) => getCategory(item.filename) === selected
       );
@@ -195,7 +273,11 @@ const SelectCategory = ({ navigation }) => {
   const onRefresh = async () => {
     setRefreshing(true);
 
-    await loadMedia();
+    if (selected === 'Files') {
+      await loadRootDirectories();
+    } else {
+      await loadMedia();
+    }
 
     setRefreshing(false);
   };
@@ -204,6 +286,10 @@ const SelectCategory = ({ navigation }) => {
   // SELECT FILE
   // =============================
   const toggleSelect = useCallback((item) => {
+    if (item.isDirectory) {
+      return;
+    }
+
     setSelectedFiles((prev) => {
       const exists = prev.find((f) => f.id === item.id);
       if (exists) {
@@ -219,10 +305,16 @@ const SelectCategory = ({ navigation }) => {
   // =============================
   useEffect(() => {
     (async () => {
-      const granted = await requestPermission();
-
-      if (granted) {
-        await loadMedia();
+      if (selected === 'Files') {
+        const granted = await requestFilePermission();
+        if (granted) {
+          await loadRootDirectories();
+        }
+      } else {
+        const granted = await requestPermission();
+        if (granted) {
+          await loadMedia();
+        }
       }
     })();
   }, [selected]);
@@ -230,7 +322,7 @@ const SelectCategory = ({ navigation }) => {
   // =============================
   // SEARCH FILTER
   // =============================
-  const filteredMedia = media.filter((item) => {
+  const filteredMedia = (selected === 'Files' ? directoryEntries : media).filter((item) => {
     const name = item.filename || item.name || '';
 
     return name.toLowerCase().includes(search.toLowerCase());
@@ -242,6 +334,22 @@ const SelectCategory = ({ navigation }) => {
   const renderItem = useCallback(({ item }) => {
     const isSelected = selectedIds.has(item.id);
 
+    if (selected === 'Files' && item.isDirectory) {
+      return (
+        <TouchableOpacity
+          style={styles.itemContainer}
+          onPress={() => openDirectory(item)}
+        >
+          <View style={styles.fileBox}>
+            <Image source={folderIcon} style={styles.folderIcon} />
+            <Text numberOfLines={2} style={styles.fileName}>
+              {item.filename}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
     const isImage =
       item.mediaType === 'photo' ||
       item.mediaType === 'image' ||
@@ -252,11 +360,8 @@ const SelectCategory = ({ navigation }) => {
         style={styles.itemContainer}
         onPress={() => toggleSelect(item)}
       >
-        {isImage ? (
-          <Image
-            source={{ uri: item.uri }}
-            style={styles.image}
-          />
+        {isImage && item.uri ? (
+          <Image source={{ uri: item.uri }} style={styles.image} />
         ) : (
           <View style={styles.fileBox}>
             <Text style={styles.fileEmoji}>
@@ -266,11 +371,7 @@ const SelectCategory = ({ navigation }) => {
                 ? '🎬'
                 : '📄'}
             </Text>
-
-            <Text
-              numberOfLines={2}
-              style={styles.fileName}
-            >
+            <Text numberOfLines={2} style={styles.fileName}>
               {item.filename || item.name}
             </Text>
           </View>
@@ -311,13 +412,24 @@ const SelectCategory = ({ navigation }) => {
             ))}
           </ScrollView>
 
+          {selected === 'Files' && (
+            <View style={styles.pathBar}>
+              <TouchableOpacity onPress={goBack} style={styles.backButton}>
+                <Text style={styles.backText}>Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.currentPath} numberOfLines={1}>
+                {currentDir || 'Storage'}
+              </Text>
+            </View>
+          )}
+
           <TextInput
             placeholder="Search files"
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
           />
-        
+
         </View>
 
         {/* LOADING */}
@@ -328,7 +440,9 @@ const SelectCategory = ({ navigation }) => {
         ) : (
           <FlatList
             data={filteredMedia}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item, index) =>
+              (item.id || item.path || item.uri || index).toString()
+            }
             numColumns={3}
             renderItem={renderItem}
             style={styles.list}
@@ -438,9 +552,36 @@ const styles = StyleSheet.create({
     fontSize: 35,
     marginBottom: 10,
   },
+  folderIcon: {
+    width: 46,
+    height: 46,
+    marginBottom: 10,
+    resizeMode: 'contain',
+  },
   fileName: {
     textAlign: 'center',
     fontSize: 12,
+  },
+  pathBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  backButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  backText: {
+    color: '#333',
+    fontSize: 14,
+  },
+  currentPath: {
+    flex: 1,
+    color: '#333',
+    fontSize: 13,
   },
   check: {
     position: 'absolute',
