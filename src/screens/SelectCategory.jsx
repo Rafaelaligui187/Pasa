@@ -99,73 +99,73 @@ const SelectCategory = ({ navigation }) => {
     // Android: Common storage paths
     const androidRoots = [
       {
-        id: '/storage/emulated/0',
-        uri: '/storage/emulated/0',
-        path: '/storage/emulated/0',
+        id: 'file:///storage/emulated/0',
+        uri: 'file:///storage/emulated/0',
+        path: 'file:///storage/emulated/0',
         filename: 'Internal Storage',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/Download',
-        uri: '/storage/emulated/0/Download',
-        path: '/storage/emulated/0/Download',
+        id: 'file:///storage/emulated/0/Download',
+        uri: 'file:///storage/emulated/0/Download',
+        path: 'file:///storage/emulated/0/Download',
         filename: 'Download',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/DCIM',
-        uri: '/storage/emulated/0/DCIM',
-        path: '/storage/emulated/0/DCIM',
+        id: 'file:///storage/emulated/0/DCIM',
+        uri: 'file:///storage/emulated/0/DCIM',
+        path: 'file:///storage/emulated/0/DCIM',
         filename: 'DCIM',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/Pictures',
-        uri: '/storage/emulated/0/Pictures',
-        path: '/storage/emulated/0/Pictures',
+        id: 'file:///storage/emulated/0/Pictures',
+        uri: 'file:///storage/emulated/0/Pictures',
+        path: 'file:///storage/emulated/0/Pictures',
         filename: 'Pictures',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/Movies',
-        uri: '/storage/emulated/0/Movies',
-        path: '/storage/emulated/0/Movies',
+        id: 'file:///storage/emulated/0/Movies',
+        uri: 'file:///storage/emulated/0/Movies',
+        path: 'file:///storage/emulated/0/Movies',
         filename: 'Movies',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/Music',
-        uri: '/storage/emulated/0/Music',
-        path: '/storage/emulated/0/Music',
+        id: 'file:///storage/emulated/0/Music',
+        uri: 'file:///storage/emulated/0/Music',
+        path: 'file:///storage/emulated/0/Music',
         filename: 'Music',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/Documents',
-        uri: '/storage/emulated/0/Documents',
-        path: '/storage/emulated/0/Documents',
+        id: 'file:///storage/emulated/0/Documents',
+        uri: 'file:///storage/emulated/0/Documents',
+        path: 'file:///storage/emulated/0/Documents',
         filename: 'Documents',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/Android',
-        uri: '/storage/emulated/0/Android',
-        path: '/storage/emulated/0/Android',
+        id: 'file:///storage/emulated/0/Android',
+        uri: 'file:///storage/emulated/0/Android',
+        path: 'file:///storage/emulated/0/Android',
         filename: 'Android',
         isDirectory: true,
         mediaType: 'folder',
       },
       {
-        id: '/storage/emulated/0/Alarm',
-        uri: '/storage/emulated/0/Alarm',
-        path: '/storage/emulated/0/Alarm',
+        id: 'file:///storage/emulated/0/Alarm',
+        uri: 'file:///storage/emulated/0/Alarm',
+        path: 'file:///storage/emulated/0/Alarm',
         filename: 'Alarm',
         isDirectory: true,
         mediaType: 'folder',
@@ -178,19 +178,7 @@ const SelectCategory = ({ navigation }) => {
   const loadRootDirectories = async () => {
     setLoading(true);
     const roots = getStorageRoots();
-    
-    // Validate which roots are actually accessible
-    const accessibleRoots = [];
-    for (const root of roots) {
-      try {
-        await FileSystem.readDirectoryAsync(root.path);
-        accessibleRoots.push(root);
-      } catch (error) {
-        console.log(`Skipping inaccessible root: ${root.filename}`);
-      }
-    }
-    
-    setDirectoryEntries(accessibleRoots.length > 0 ? accessibleRoots : roots);
+    setDirectoryEntries(roots);
     setCurrentDir(null);
     setLoading(false);
   };
@@ -201,12 +189,20 @@ const SelectCategory = ({ navigation }) => {
       const fileNames = await FileSystem.readDirectoryAsync(dirPath);
       const entries = await Promise.all(
         fileNames.map(async (name) => {
-          const path = dirPath + (dirPath.endsWith('/') ? '' : '/') + name;
+          // Construct path properly, handling file:// scheme
+          let path;
+          if (dirPath.startsWith('file://')) {
+            const pathWithoutScheme = dirPath.substring(7);
+            path = 'file://' + (pathWithoutScheme.endsWith('/') ? pathWithoutScheme : pathWithoutScheme + '/') + name;
+          } else {
+            path = dirPath + (dirPath.endsWith('/') ? '' : '/') + name;
+          }
+          
           try {
             const info = await FileSystem.getInfoAsync(path);
             return {
               id: path,
-              uri: info.isDirectory ? path : path,
+              uri: path,
               path,
               filename: name,
               isDirectory: info.isDirectory,
@@ -255,13 +251,21 @@ const SelectCategory = ({ navigation }) => {
       return;
     }
 
-    const parent = currentDir.replace(/\/[^\/]+\/?$/, '');
+    let parent;
+    if (currentDir.startsWith('file://')) {
+      const pathWithoutScheme = currentDir.substring(7);
+      const parentPath = pathWithoutScheme.replace(/\/[^\/]+\/?$/, '');
+      parent = parentPath ? 'file://' + parentPath : null;
+    } else {
+      parent = currentDir.replace(/\/[^\/]+\/?$/, '');
+    }
+
     if (!parent) {
       await loadRootDirectories();
       return;
     }
 
-    await loadDirectory(parent + '/');
+    await loadDirectory(parent);
   };
 
   // =============================
@@ -448,6 +452,75 @@ const SelectCategory = ({ navigation }) => {
       );
     }
 
+    // For Files category, show appropriate thumbnails
+    if (selected === 'Files') {
+      const fileExt = item.filename.split('.').pop()?.toLowerCase();
+      const isImageFile = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(fileExt);
+      const isVideoFile = ['mp4', 'mkv', 'mov', 'avi', 'wmv', 'flv', 'webm'].includes(fileExt);
+      const isAudioFile = ['mp3', 'wav', 'aac', 'm4a', 'flac', 'ogg'].includes(fileExt);
+      const isDocumentFile = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExt);
+
+      return (
+        <TouchableOpacity
+          style={styles.itemContainer}
+          onPress={() => toggleSelect(item)}
+        >
+          <View style={styles.fileBox}>
+            {isImageFile ? (
+              <Image
+                source={{ uri: item.uri }}
+                style={styles.fileThumbnail}
+                resizeMode="cover"
+              />
+            ) : isVideoFile ? (
+              <View style={styles.videoThumbnail}>
+                <Text style={styles.videoIcon}>🎬</Text>
+                <View style={styles.playIcon}>
+                  <Text style={styles.playText}>▶</Text>
+                </View>
+              </View>
+            ) : isAudioFile ? (
+              <View style={styles.audioThumbnail}>
+                <Text style={styles.audioIcon}>🎵</Text>
+                <View style={styles.waveform}>
+                  <View style={styles.waveBar} />
+                  <View style={[styles.waveBar, styles.waveBarMedium]} />
+                  <View style={styles.waveBar} />
+                  <View style={[styles.waveBar, styles.waveBarTall]} />
+                  <View style={[styles.waveBar, styles.waveBarMedium]} />
+                </View>
+              </View>
+            ) : isDocumentFile ? (
+              <View style={styles.documentThumbnail}>
+                <Text style={styles.documentIcon}>
+                  {fileExt === 'pdf' ? '📕' :
+                   ['doc', 'docx'].includes(fileExt) ? '📄' :
+                   ['xls', 'xlsx'].includes(fileExt) ? '📊' :
+                   ['ppt', 'pptx'].includes(fileExt) ? '📈' : '📝'}
+                </Text>
+                <Text style={styles.documentExt}>{fileExt.toUpperCase()}</Text>
+              </View>
+            ) : (
+              <View style={styles.genericThumbnail}>
+                <Text style={styles.genericIcon}>📄</Text>
+                <Text style={styles.genericExt}>{fileExt ? fileExt.toUpperCase() : 'FILE'}</Text>
+              </View>
+            )}
+            <Text numberOfLines={2} style={styles.fileName}>
+              {item.filename}
+            </Text>
+          </View>
+
+          {isSelected && (
+            <View style={styles.check}>
+              <Text style={{ color: '#fff' }}>✓</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      );
+    }
+
+    // For other categories (Photos, Videos, Audio)
     const isImage =
       item.mediaType === 'photo' ||
       item.mediaType === 'image' ||
@@ -656,6 +729,108 @@ const styles = StyleSheet.create({
     height: 46,
     marginBottom: 10,
     resizeMode: 'contain',
+  },
+  fileThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  videoThumbnail: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#333',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+    position: 'relative',
+  },
+  videoIcon: {
+    fontSize: 20,
+    color: '#fff',
+  },
+  playIcon: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playText: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 2,
+  },
+  audioThumbnail: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#4CAF50',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  audioIcon: {
+    fontSize: 20,
+    color: '#fff',
+    marginBottom: 5,
+  },
+  waveform: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 15,
+  },
+  waveBar: {
+    width: 3,
+    height: 8,
+    backgroundColor: '#fff',
+    marginHorizontal: 1,
+    borderRadius: 1,
+  },
+  waveBarMedium: {
+    height: 12,
+  },
+  waveBarTall: {
+    height: 15,
+  },
+  documentThumbnail: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#2196F3',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  documentIcon: {
+    fontSize: 24,
+    marginBottom: 2,
+  },
+  documentExt: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  genericThumbnail: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#9E9E9E',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  genericIcon: {
+    fontSize: 20,
+    marginBottom: 2,
+  },
+  genericExt: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   fileName: {
     textAlign: 'center',
