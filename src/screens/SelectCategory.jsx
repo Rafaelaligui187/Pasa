@@ -83,22 +83,114 @@ const SelectCategory = ({ navigation }) => {
   };
 
   const getStorageRoots = () => {
-    return [
+    if (Platform.OS !== 'android') {
+      return [
+        {
+          id: FileSystem.documentDirectory,
+          uri: FileSystem.documentDirectory,
+          path: FileSystem.documentDirectory,
+          filename: 'App Files',
+          isDirectory: true,
+          mediaType: 'folder',
+        },
+      ];
+    }
+
+    // Android: Common storage paths
+    const androidRoots = [
       {
-        id: FileSystem.documentDirectory,
-        uri: FileSystem.documentDirectory,
-        path: FileSystem.documentDirectory,
-        filename: 'App Files',
+        id: '/storage/emulated/0',
+        uri: '/storage/emulated/0',
+        path: '/storage/emulated/0',
+        filename: 'Internal Storage',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/Download',
+        uri: '/storage/emulated/0/Download',
+        path: '/storage/emulated/0/Download',
+        filename: 'Download',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/DCIM',
+        uri: '/storage/emulated/0/DCIM',
+        path: '/storage/emulated/0/DCIM',
+        filename: 'DCIM',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/Pictures',
+        uri: '/storage/emulated/0/Pictures',
+        path: '/storage/emulated/0/Pictures',
+        filename: 'Pictures',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/Movies',
+        uri: '/storage/emulated/0/Movies',
+        path: '/storage/emulated/0/Movies',
+        filename: 'Movies',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/Music',
+        uri: '/storage/emulated/0/Music',
+        path: '/storage/emulated/0/Music',
+        filename: 'Music',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/Documents',
+        uri: '/storage/emulated/0/Documents',
+        path: '/storage/emulated/0/Documents',
+        filename: 'Documents',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/Android',
+        uri: '/storage/emulated/0/Android',
+        path: '/storage/emulated/0/Android',
+        filename: 'Android',
+        isDirectory: true,
+        mediaType: 'folder',
+      },
+      {
+        id: '/storage/emulated/0/Alarm',
+        uri: '/storage/emulated/0/Alarm',
+        path: '/storage/emulated/0/Alarm',
+        filename: 'Alarm',
         isDirectory: true,
         mediaType: 'folder',
       },
     ];
+
+    return androidRoots;
   };
 
   const loadRootDirectories = async () => {
     setLoading(true);
     const roots = getStorageRoots();
-    setDirectoryEntries(roots);
+    
+    // Validate which roots are actually accessible
+    const accessibleRoots = [];
+    for (const root of roots) {
+      try {
+        await FileSystem.readDirectoryAsync(root.path);
+        accessibleRoots.push(root);
+      } catch (error) {
+        console.log(`Skipping inaccessible root: ${root.filename}`);
+      }
+    }
+    
+    setDirectoryEntries(accessibleRoots.length > 0 ? accessibleRoots : roots);
     setCurrentDir(null);
     setLoading(false);
   };
@@ -109,20 +201,25 @@ const SelectCategory = ({ navigation }) => {
       const fileNames = await FileSystem.readDirectoryAsync(dirPath);
       const entries = await Promise.all(
         fileNames.map(async (name) => {
-          const path = dirPath + name;
-          const info = await FileSystem.getInfoAsync(path);
-          return {
-            id: path,
-            uri: info.isDirectory ? path : path,
-            path,
-            filename: name,
-            isDirectory: info.isDirectory,
-            mediaType: info.isDirectory ? 'folder' : getCategory(name).toLowerCase(),
-          };
+          const path = dirPath + (dirPath.endsWith('/') ? '' : '/') + name;
+          try {
+            const info = await FileSystem.getInfoAsync(path);
+            return {
+              id: path,
+              uri: info.isDirectory ? path : path,
+              path,
+              filename: name,
+              isDirectory: info.isDirectory,
+              mediaType: info.isDirectory ? 'folder' : getCategory(name).toLowerCase(),
+            };
+          } catch (err) {
+            return null;
+          }
         })
       );
 
-      const sorted = entries.sort((a, b) => {
+      const filtered = entries.filter((e) => e !== null);
+      const sorted = filtered.sort((a, b) => {
         if (a.isDirectory === b.isDirectory) {
           return a.filename.localeCompare(b.filename);
         }
@@ -133,6 +230,7 @@ const SelectCategory = ({ navigation }) => {
       setCurrentDir(dirPath);
     } catch (error) {
       console.log('Read directory error:', error);
+      alert(`Cannot access this folder. Please try another.`);
       setDirectoryEntries([]);
     }
     setLoading(false);
