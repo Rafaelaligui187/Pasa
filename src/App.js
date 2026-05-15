@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// to use downloaded fonts
+import { useFonts } from 'expo-font'
 
 // Import screens
 import Menu from './screens/Menu';
@@ -10,8 +12,6 @@ import SelectCategory from './screens/SelectCategory'
 import AppTab from '../components/AppTab';
 
 
-// to use downloaded fonts
-import { useFonts } from 'expo-font'
 
 const Stack = createNativeStackNavigator();
 
