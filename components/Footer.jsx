@@ -26,5 +26,6 @@ export default Footer
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
+        marginBottom: 20,
     }
 })

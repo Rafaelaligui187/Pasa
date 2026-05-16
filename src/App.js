@@ -11,6 +11,12 @@ import Receive from './screens/Receive'
 import SelectCategory from './screens/SelectCategory'
 import AppTab from '../components/AppTab';
 
+//Imported Categories Screens
+import Applications from '../src/screens/categories/Applications';
+import Photos from '../src/screens/categories/Photos';
+import Files from '../src/screens/categories/Files';
+import Audios from '../src/screens/categories/Audios';
+import Videos from '../src/screens/categories/Videos';
 
 
 const Stack = createNativeStackNavigator();
@@ -33,6 +39,13 @@ if (!fontsLoaded) return null;
         <Stack.Screen name="SelectCategory" component={SelectCategory} options={{ headerShown: false}}/>
         <Stack.Screen name="AppTab" component={AppTab} options={{ headerShown: false}}/>
       
+        {/* ///Categories Screens */}
+        <Stack.Screen name="Applications" component={Applications} options={{ headerShown: false}}/>
+        <Stack.Screen name="Photos" component={Photos} options={{ headerShown: false}}/>
+        <Stack.Screen name="Files" component={Files} options={{ headerShown: false}}/>
+        <Stack.Screen name="Audios" component={Audios} options={{ headerShown: false}}/>
+        <Stack.Screen name="Videos" component={Videos} options={{ headerShown: false}}/>
+
       </Stack.Navigator>
     </NavigationContainer>
   );

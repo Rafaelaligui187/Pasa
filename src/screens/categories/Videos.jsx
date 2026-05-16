@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 
-const Apps = () => {
+const Videos = () => {
   return (
     <View>
-      <Text>Apps</Text>
+      <Text>Videos</Text>
     </View>
   )
 }
 
-export default Apps
+export default Videos
 
 const styles = StyleSheet.create({})

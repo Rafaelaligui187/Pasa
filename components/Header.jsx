@@ -1,59 +1,62 @@
-import { ScrollView, StyleSheet, Text, View, Image, SafeAreaView, TextInput, TouchableOpacity} from 'react-native'
-import React, { useEffect, useState,} from 'react';
-import CustomButton from '../components/CustomButton';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  SafeAreaView,
+  TextInput,
+  TouchableOpacity
+} from 'react-native';
+
+import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
-const Header = ({navigation}) => {
-  const [selected, setSelected] = useState('App'); 
+const Header = ({ selected, setSelected }) => {
+
   const categories = ['Apps', 'Photos', 'Files', 'Audio', 'Video'];
 
   return (
     <SafeAreaView>
-  <View style={styles.container}>
+      <View style={styles.container}>
 
-    <Image
-      style={styles.logo}
-      source={require('../assets/icon.png')}
-    />
+        <Image
+          style={styles.logo}
+          source={require('../assets/icon.png')}
+        />
 
-    {/* CATEGORY SCROLL */}
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.categoryContainer}
-    >
-      {categories.map((cat) => (
-        <TouchableOpacity
-          key={cat}
-          onPress={() => setSelected(cat)}
-          style={[
-            styles.categoryBtn,
-            selected === cat && styles.selectedBtn
-          ]}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
         >
-          <Text
-            style={[
-              styles.categoryText,
-              selected === cat && styles.selectedText
-            ]}
-          >
-            {cat}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => setSelected(cat)}
+              style={styles.categoryBtn}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selected === cat && styles.selectedText
+                ]}
+              >
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-    {/* SEARCH BAR */}
-    <TextInput
-      placeholder="Search files..."
-      style={styles.searchInput}
-    />
-    
-  </View>
-</SafeAreaView> 
-  ) 
-}
- 
+        <TextInput
+          placeholder="Search files..."
+          style={styles.searchInput}
+        />
+
+      </View>
+    </SafeAreaView>
+  );
+};
+
 export default Header
 
 const styles = StyleSheet.create({
