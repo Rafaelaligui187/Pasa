@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// to use downloaded fonts
+import { useFonts } from 'expo-font'
 
 // Import screens
 import Menu from './screens/Menu';
@@ -10,8 +12,6 @@ import SelectCategory from './screens/SelectCategory'
 import AppTab from '../components/AppTab';
 
 
-// to use downloaded fonts
-import { useFonts } from 'expo-font'
 
 const Stack = createNativeStackNavigator();
 
@@ -32,9 +32,7 @@ if (!fontsLoaded) return null;
         <Stack.Screen name="Receive" component={Receive} options={{ headerShown: false}}/>
         <Stack.Screen name="SelectCategory" component={SelectCategory} options={{ headerShown: false}}/>
         <Stack.Screen name="AppTab" component={AppTab} options={{ headerShown: false}}/>
-
-        
-
+      
       </Stack.Navigator>
     </NavigationContainer>
   );
