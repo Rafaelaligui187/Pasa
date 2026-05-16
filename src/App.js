@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as NavigationBar from 'expo-navigation-bar';
+
 // to use downloaded fonts
 import { useFonts } from 'expo-font'
 
@@ -27,6 +29,14 @@ export default function App() {
 const [fontsLoaded] = useFonts({
   'Poppins': require('../assets/fonts/Poppins-Regular.ttf'),
 });
+if (!fontsLoaded) return null;
+
+
+///TO hide android navigation BAR
+useEffect(() => {
+  NavigationBar.setVisibilityAsync('hidden');
+}, []);
+
 if (!fontsLoaded) return null;
 
   return (

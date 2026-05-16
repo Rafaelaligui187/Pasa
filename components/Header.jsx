@@ -48,7 +48,7 @@ const Header = ({ selected, setSelected }) => {
         </ScrollView>
 
         <TextInput
-          placeholder="Search files..."
+          placeholder="Search..."
           style={styles.searchInput}
         />
 
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   container:{
     alignItems: 'center',
     width: '100%',
-    marginTop: 30,
+    marginTop: 35,
   },
   logo: {
     width: 55,
@@ -76,11 +76,12 @@ const styles = StyleSheet.create({
     width: '90%',
     borderRadius: 5,
     alignSelf: 'center',
-    borderColor: '#5B5B5B'
+    borderColor: '#5B5B5B',
   },
   categoryText:{
     fontSize: 16,
     textAlign: 'center',
+    marginTop: 25,
   },
   categoryBtn:{
     marginRight: 20,

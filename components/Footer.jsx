@@ -9,11 +9,22 @@ const Footer = () => {
   
     return (
     <View style={styles.container}>
+      {/* ////SEND BTN */}
       <CustomButton 
         backgroundColor={'#5B5B5B'} 
-        title="Cancel"
+        title="Send"
         family={'Poppins'} 
         textColor={'white'}
+        width={'90%'}
+        borderRadius={5}/>
+         
+      
+      {/* //////CANCEL BTN */}
+      <CustomButton 
+        backgroundColor={'#D9D9D9'} 
+        title="Cancel"
+        family={'Poppins'} 
+        textColor={'black'}
         width={'90%'}
         borderRadius={5}
         onPress={() => navigation.goBack()} /> 
