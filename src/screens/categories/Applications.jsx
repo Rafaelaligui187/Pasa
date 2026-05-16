@@ -4,7 +4,7 @@ import React from 'react'
 const Applications = () => {
   return (
     <View>
-      <Text>Application</Text>
+      <Text>Applications</Text>
     </View>
   )
 }
@@ -12,23 +12,3 @@ const Applications = () => {
 export default Applications
 
 const styles = StyleSheet.create({})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 

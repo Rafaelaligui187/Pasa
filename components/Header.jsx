@@ -13,9 +13,9 @@ import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
 const Header = ({ selected, setSelected }) => {
-
-  const categories = ['Apps', 'Photos', 'Files', 'Audio', 'Video'];
-
+  ///make sure thse categories are the same as the screen to worksr
+  const categories = ['Photos',  'Audios', 'Videos', 'Files', ];
+  
   return (
     <SafeAreaView>
       <View style={styles.container}>

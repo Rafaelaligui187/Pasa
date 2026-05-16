@@ -6,20 +6,22 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
 ///Imported Categories screens
-import Applications from '../screens/categories/Applications';
+// import Applications from '../screens/categories/Applications';
 import Photos from '../screens/categories/Photos';
 import Files from '../screens/categories/Files';
 import Audios from '../screens/categories/Audios';
 import Videos from '../screens/categories/Videos';
 
+
 const SelectCategory = () => {
 
-  const [selectedCategory, setSelectedCategory] = useState('Applications');
+  const [selectedCategory, setSelectedCategory] = useState('Photos'); ///Change this to Apps if available
 
+  ///////Fucntion to render the selected category screen
   const renderScreen = () => {
     switch (selectedCategory) {
-      case 'Applications':
-        return <Applications />;
+      // case 'Applications':
+      //   return <Applications />;
       
       case 'Photos':
         return <Photos />;
