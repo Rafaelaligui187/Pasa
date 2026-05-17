@@ -59,9 +59,8 @@ export default Photos
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 5,
-    width: '100%',
+    flex: 1,
     alignItems: 'center',
   },
   image: {

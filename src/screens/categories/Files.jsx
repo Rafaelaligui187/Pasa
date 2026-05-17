@@ -1,79 +1,64 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+
 import {
   View,
   Text,
   TouchableOpacity,
+  FlatList,
   StyleSheet,
 } from 'react-native';
 
-import { FileSystem } from 'react-native-file-access';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 
-const Files = ({ navigation }) => {
+const Files = () => {
 
-  const [storages, setStorages] = useState([]);
+  const [files, setFiles] = useState([]);
 
-  useEffect(() => {
-    detectStorage();
-  }, []);
+  const pickFolder = async () => {
 
-  const detectStorage = async () => {
-
-    const storageList = [];
-
-    // Scann Internal Storage
-    storageList.push({
-      name: 'Device Storage',
-      path: '/storage/emulated/0',
+    const result = await DocumentPicker.getDocumentAsync({
+      multiple: true,
+      copyToCacheDirectory: false,
     });
 
-    // Scann SD Card
-    try {
+    if (!result.canceled) {
 
-      const sdTest = await FileSystem.exists('/storage');
-
-      if (sdTest) {
-
-        storageList.push({
-          name: 'SD Card Storage',
-          path: '/storage/XXXX-XXXX',
-        });
-
-      }
-
-    } catch (err) {
-      console.log(err);
+      setFiles(result.assets);
     }
-
-    setStorages(storageList);
   };
 
   return (
     <View style={styles.container}>
 
-      {storages.map((storage, index) => (
+      <TouchableOpacity
+        style={styles.button}
+        onPress={pickFolder}
+      >
+        <Text style={styles.buttonText}>
+          Browse Files
+        </Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity
-          key={index}
-          style={styles.storageCard}
-          onPress={() =>
-            navigation.navigate('FileBrowser', {
-              path: storage.path,
-              title: storage.name,
-            })
-          }
-        >
+      <FlatList
+        data={files}
+        keyExtractor={(item) => item.uri}
+        renderItem={({ item }) => (
 
-          <Text style={styles.storageTitle}>
-            {storage.name}
-          </Text>
+          <View style={styles.fileCard}>
 
-          <Text style={styles.storagePath}>
-            {storage.path}
-          </Text>
+            <Text style={styles.fileName}>
+              {item.name}
+            </Text>
 
-        </TouchableOpacity>
+            <Text style={styles.fileUri}>
+              {item.uri}
+            </Text>
 
-      ))}
+          </View>
+
+        )}
+      />
 
     </View>
   );
@@ -87,21 +72,33 @@ const styles = StyleSheet.create({
     padding: 15,
   },
 
-  storageCard: {
-    padding: 20,
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 15,
+  button: {
+    backgroundColor: '#000',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
   },
 
-  storageTitle: {
-    fontSize: 18,
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
     fontWeight: 'bold',
-    fontFamily: 'Poppins',
   },
 
-  storagePath: {
+  fileCard: {
+    padding: 15,
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+
+  fileName: {
+    fontWeight: 'bold',
+  },
+
+  fileUri: {
     color: 'gray',
     marginTop: 5,
+    fontSize: 12,
   },
 });
