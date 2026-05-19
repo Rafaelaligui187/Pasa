@@ -2,3 +2,6 @@ Files.jsx -> Scan Device Storage and SD Card for files and navigate to file brow
 FileBrowser.jsx -> Allow user to Explore the storage and open files (for now just log the file path)
 
 eas build --platform android --profile preview
+
+
+Add more info in documents
