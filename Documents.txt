@@ -4,4 +4,4 @@ FileBrowser.jsx -> Allow user to Explore the storage and open files (for now jus
 eas build --platform android --profile preview
 
 
-Add more info in documents
+No more information to provide
