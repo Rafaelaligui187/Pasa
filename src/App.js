@@ -22,7 +22,6 @@ import Audios from '../src/screens/categories/Audios';
 import Videos from '../src/screens/categories/Videos';
 
 
-
 const Stack = createNativeStackNavigator();
 
 export default function App() {

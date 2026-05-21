@@ -4,13 +4,16 @@ import { View,
   StyleSheet,
   PermissionsAndroid,
   Platform,
+  Dimensions,
   Text, } from 'react-native'
 import React, {useEffect, useState,} from 'react'
 import * as MediaLibrary from 'expo-media-library';
 
+const screenWidth = Dimensions.get('window').width;
+const imageSize = (screenWidth - 12) / 3;
 
 const Photos = () => {
-
+  
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
@@ -18,7 +21,7 @@ const Photos = () => {
   }, []);
 
   const getPhotos = async () => {
-    ///Request permission to acces media library
+    ///Request permission to acces media library #1
     const { status } = await MediaLibrary.requestPermissionsAsync();
 
     if(status !== 'granted'){
@@ -26,7 +29,7 @@ const Photos = () => {
       return;
     }
 
-    //GET PHOTOS
+    //GET PHOTOS #1
     const media = await MediaLibrary.getAssetsAsync({
       mediaType: 'photo',
       first: 100,
@@ -35,11 +38,15 @@ const Photos = () => {
 
     setPhotos(media.assets);
   };
+ 
+
 
   return (
     <View style={styles.container}>
-
       <FlatList
+      contentContainerStyle={{
+          paddingBottom: 100
+        }}
         data={photos}
         keyExtractor={(item) => item.id}
         numColumns={3}
@@ -64,8 +71,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: 150,
-    height: 150,
-    margin: 1,
+    width: imageSize,
+    height: imageSize,
+    margin: 2,
   },
 });
