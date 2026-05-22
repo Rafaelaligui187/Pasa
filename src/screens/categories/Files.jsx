@@ -1,65 +1,137 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  FlatList,
   StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-
-import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import { useNavigation } from '@react-navigation/native';
 
 const Files = () => {
+  const navigation = useNavigation();
+  const [internalStorage, setInternalStorage] = useState({ free: '...', total: '...' });
+  const [sdCard, setSdCard] = useState({ inserted: false, name: '', free: '...', total: '...' });
+  const [loading, setLoading] = useState(true);
 
-  const [files, setFiles] = useState([]);
+  const getStorageMetrics = async () => {
+    try {
+      setLoading(true);
 
-  const pickFolder = async () => {
+      // 1. Fetch Internal Storage Metrics
+      const internalFreeBytes = await FileSystem.getFreeDiskStorageAsync();
+      const internalTotalBytes = await FileSystem.getTotalDiskCapacityAsync();
 
-    const result = await DocumentPicker.getDocumentAsync({
-      multiple: true,
-      copyToCacheDirectory: false,
-    });
+      const internalFreeGB = (internalFreeBytes / (1024 * 1024 * 1024)).toFixed(2);
+      const internalTotalGB = (internalTotalBytes / (1024 * 1024 * 1024)).toFixed(2);
 
-    if (!result.canceled) {
+      setInternalStorage({
+        free: `${internalFreeGB} GB`,
+        total: `${internalTotalGB} GB`,
+      });
 
-      setFiles(result.assets);
+      // 2. Detect External SD Card via Android Root Directories
+      const storageDirs = await FileSystem.readDirectoryAsync('/storage/');
+      const externalVolumes = storageDirs.filter(
+        (dir) => dir !== 'emulated' && dir !== 'self' && dir !== 'knox'
+      );
+
+      if (externalVolumes.length > 0) {
+        const sdCardId = externalVolumes[0];
+        const sdCardPath = `/storage/${sdCardId}`;
+
+        const sdFreeBytes = await FileSystem.getFreeDiskStorageAsync(sdCardPath);
+        const sdTotalBytes = await FileSystem.getTotalDiskCapacityAsync(sdCardPath);
+
+        const sdFreeGB = (sdFreeBytes / (1024 * 1024 * 1024)).toFixed(2);
+        const sdTotalGB = (sdTotalBytes / (1024 * 1024 * 1024)).toFixed(2);
+
+        setSdCard({
+          inserted: true,
+          name: sdCardId,
+          free: `${sdFreeGB} GB`,
+          total: `${sdTotalGB} GB`,
+        });
+      } else {
+        setSdCard((prev) => ({ ...prev, inserted: false }));
+      }
+    } catch (error) {
+      console.log('Error reading hardware storage blocks:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    getStorageMetrics();
+  }, []);
+
+  // Find this function inside your Files.jsx and change it to pass:
+  const handleStoragePress = (storageType) => {
+    navigation.navigate('FileBrowser', {
+      storageName: storageType === 'internal' ? 'Internal Storage' : 'SD Card',
+      rootPath: storageType === 'internal' ? FileSystem.documentDirectory : `/storage/${sdCard.name}`,
+    });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4630EB" />
+        <Text style={styles.loadingText}>Reading storage volumes...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Storage Volumes</Text>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={pickFolder}
+      {/* Internal Device Storage Card (Clickable) */}
+      <TouchableOpacity 
+        style={styles.storageCard}
+        onPress={() => handleStoragePress('internal', '/storage/emulated/0')} // Android accessible primary storage root path
+        activeOpacity={0.7}
       >
-        <Text style={styles.buttonText}>
-          Browse Files
+        <View style={styles.cardHeaderRow}>
+          <Text style={styles.cardIcon}>📱</Text>
+          <View style={styles.cardTextGroup}>
+            <Text style={styles.cardTitle}>Internal Storage</Text>
+            <Text style={styles.cardSubtitle}>Device Memory</Text>
+          </View>
+          <Text style={styles.arrowIcon}>›</Text>
+        </View>
+        <Text style={styles.storageText}>
+          {internalStorage.free} free of {internalStorage.total}
         </Text>
       </TouchableOpacity>
 
-      <FlatList
-        data={files}
-        keyExtractor={(item) => item.uri}
-        renderItem={({ item }) => (
-
-          <View style={styles.fileCard}>
-
-            <Text style={styles.fileName}>
-              {item.name}
+      {/* SD Card Storage Card (Clickable if inserted) */}
+      <TouchableOpacity 
+        style={[styles.storageCard, !sdCard.inserted && styles.disabledCard]}
+        disabled={!sdCard.inserted}
+        onPress={() => handleStoragePress('sdcard', `/storage/${sdCard.name}`)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardHeaderRow}>
+          <Text style={styles.cardIcon}>💾</Text>
+          <View style={styles.cardTextGroup}>
+            <Text style={styles.cardTitle}>SD Card</Text>
+            <Text style={styles.cardSubtitle}>
+              {sdCard.inserted ? `ID: ${sdCard.name}` : 'Not Detected'}
             </Text>
-
-            <Text style={styles.fileUri}>
-              {item.uri}
-            </Text>
-
           </View>
-
+          {sdCard.inserted && <Text style={styles.arrowIcon}>›</Text>}
+        </View>
+        {sdCard.inserted ? (
+          <Text style={styles.storageText}>
+            {sdCard.free} free of {sdCard.total}
+          </Text>
+        ) : (
+          <Text style={styles.noSdText}>No external SD card inserted</Text>
         )}
-      />
-
+      </TouchableOpacity>
     </View>
   );
 };
@@ -69,36 +141,76 @@ export default Files;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    backgroundColor: '#f2f2f2',
+    padding: 20,
   },
-
-  button: {
-    backgroundColor: '#000',
-    padding: 15,
-    borderRadius: 10,
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
     marginBottom: 20,
   },
-
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-
-  fileCard: {
-    padding: 15,
+  storageCard: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderRadius: 10,
-    marginBottom: 10,
+    borderColor: '#e9ecef',
+    marginBottom: 16,
+    elevation: 1,
   },
-
-  fileName: {
+  disabledCard: {
+    opacity: 0.6,
+    backgroundColor: '#f1f2f6',
+    borderColor: '#dcdde1',
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  cardTextGroup: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2d3436',
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    color: '#b2bec3',
+    marginTop: 2,
+  },
+  arrowIcon: {
+    fontSize: 22,
+    color: '#b2bec3',
     fontWeight: 'bold',
   },
-
-  fileUri: {
-    color: 'gray',
-    marginTop: 5,
-    fontSize: 12,
+  storageText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2d3436',
+    paddingLeft: 2,
+  },
+  noSdText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 15,
+    color: '#666',
   },
 });
