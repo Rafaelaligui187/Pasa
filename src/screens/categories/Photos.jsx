@@ -9,8 +9,8 @@ import { View,
 import React, {useEffect, useState,} from 'react'
 import * as MediaLibrary from 'expo-media-library';
 
-const screenWidth = Dimensions.get('window').width;
-const imageSize = (screenWidth - 12) / 3;
+const screenWidth = Dimensions.get('window').width;// #3----|_______To make it fit to any screen  
+const imageSize = (screenWidth - 12) / 3;  // #3------------|
 
 const Photos = () => {
   

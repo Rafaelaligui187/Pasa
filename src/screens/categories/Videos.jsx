@@ -1,40 +1,22 @@
-import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
+  Image,
   FlatList,
   StyleSheet,
+  Dimensions,
   TouchableOpacity,
 } from 'react-native';
 
+import React, { useEffect, useState } from 'react';
+
 import * as MediaLibrary from 'expo-media-library';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
-const VideoItem = ({ item }) => {
+const screenWidth = Dimensions.get('window').width;
 
-  const player = useVideoPlayer(item.uri, (player) => {
-    player.loop = false;
-  });
+const imageSize = (screenWidth - 12) / 3;
 
-  return (
-    <View style={styles.videoCard}>
-
-      <VideoView
-        style={styles.video}
-        player={player}
-        allowsFullscreen
-        allowsPictureInPicture
-      />
-
-      <Text style={styles.videoTitle}>
-        {item.filename}
-      </Text>
-
-    </View>
-  );
-};
-
-const VideoScreen = () => {
+const Videos = () => {
 
   const [videos, setVideos] = useState([]);
 
@@ -44,7 +26,8 @@ const VideoScreen = () => {
 
   const getVideos = async () => {
 
-    const { status } = await MediaLibrary.requestPermissionsAsync();
+    const { status } =
+      await MediaLibrary.requestPermissionsAsync();
 
     if (status !== 'granted') {
       alert('Permission denied');
@@ -57,17 +40,66 @@ const VideoScreen = () => {
       sortBy: ['creationTime'],
     });
 
-    setVideos(media.assets);
+    const videoData = await Promise.all(
+
+      media.assets.map(async (video) => {
+
+        try {
+
+          const { uri } =
+            await VideoThumbnails.getThumbnailAsync(
+              video.uri,
+              {
+                time: 1000,
+              }
+            );
+
+          return {
+            ...video,
+            thumbnail: uri,
+          };
+
+        } catch (e) {
+
+          return {
+            ...video,
+            thumbnail: null,
+          };
+        }
+      })
+
+    );
+
+    setVideos(videoData);
   };
 
   return (
     <View style={styles.container}>
 
       <FlatList
+        contentContainerStyle={{
+          paddingBottom: 100,
+        }}
         data={videos}
         keyExtractor={(item) => item.id}
+        numColumns={3}
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews={true}
         renderItem={({ item }) => (
-          <VideoItem item={item} />
+
+          <TouchableOpacity>
+
+            <Image
+              source={{
+                uri: item.thumbnail || item.uri,
+              }}
+              style={styles.image}
+            />
+
+          </TouchableOpacity>
+          
         )}
       />
 
@@ -75,28 +107,20 @@ const VideoScreen = () => {
   );
 };
 
-export default VideoScreen;
+export default Videos;
 
 const styles = StyleSheet.create({
   container: {
+    padding: 5,
     flex: 1,
-    padding: 10,
+    alignItems: 'center',
   },
 
-  videoCard: {
-    marginBottom: 20,
-  },
-
-  video: {
-    width: '100%',
-    height: 220,
-    borderRadius: 10,
+  image: {
+    width: imageSize,
+    height: imageSize,
+    margin: 2,
+    borderRadius: 5,
     backgroundColor: '#D2D2D2',
-  },
-
-  videoTitle: {
-    marginTop: 8,
-    fontSize: 15,
-    fontFamily: 'Poppins'
   },
 });
