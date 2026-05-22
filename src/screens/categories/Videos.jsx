@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
-
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Image,
@@ -9,115 +8,85 @@ import {
   TouchableOpacity,
   Alert,
   Text,
+  ActivityIndicator,
 } from 'react-native';
-
 import * as MediaLibrary from 'expo-media-library';
 import * as VideoThumbnails from 'expo-video-thumbnails';
-
 import Checkbox from 'expo-checkbox';
 
 const { width: screenWidth } = Dimensions.get('window');
-
-const IMAGE_SIZE = (screenWidth - 22) / 3;
+const IMAGE_SIZE = (screenWidth - 20) / 3; // Standardized grid metric constraints
 
 // Split videos into rows of 3
 const chunkArray = (array, size) => {
-
   const result = [];
-
   for (let i = 0; i < array.length; i += size) {
     result.push(array.slice(i, i + size));
   }
-
   return result;
 };
 
 const Videos = () => {
-
   const [sections, setSections] = useState([]);
   const [selected, setSelected] = useState(new Set());
+  const [loading, setLoading] = useState(true);
 
   const getVideos = async () => {
+    try {
+      setLoading(true);
+      const { status } = await MediaLibrary.requestPermissionsAsync();
 
-    const { status } =
-      await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Please allow media access to view videos.');
+        return;
+      }
 
-    if (status !== 'granted') {
-
-      Alert.alert(
-        'Permission Denied',
-        'Please allow media access to view videos.'
-      );
-
-      return;
-    }
-
-    const media =
-      await MediaLibrary.getAssetsAsync({
+      const media = await MediaLibrary.getAssetsAsync({
         mediaType: MediaLibrary.MediaType.video,
         first: 50,
-        sortBy: [MediaLibrary.SortBy.creationTime],
+        sortBy: [['creationTime', false]], // Keep sort array structure predictable
       });
 
-    const videoData = await Promise.all(
+      const videoData = await Promise.all(
+        media.assets.map(async (video) => {
+          try {
+            const { uri } = await VideoThumbnails.getThumbnailAsync(video.uri, {
+              time: 1000,
+            });
+            return { ...video, thumbnail: uri };
+          } catch (e) {
+            return { ...video, thumbnail: null };
+          }
+        })
+      );
 
-      media.assets.map(async (video) => {
-
-        try {
-
-          const { uri } =
-            await VideoThumbnails.getThumbnailAsync(
-              video.uri,
-              {
-                time: 1000,
-              }
-            );
-
-          return {
-            ...video,
-            thumbnail: uri,
-          };
-
-        } catch (e) {
-
-          return {
-            ...video,
-            thumbnail: null,
-          };
-        }
-      })
-
-    );
-
-    // GROUP VIDEOS BY MONTH/YEAR
-    const grouped = {};
-
-    videoData.forEach((video) => {
-
-      const date =
-        new Date(video.creationTime);
-
-      const monthYear =
-        date.toLocaleString('default', {
+      // GROUP VIDEOS BY MONTH/YEAR
+      const grouped = {};
+      videoData.forEach((video) => {
+        const date = new Date(video.creationTime);
+        const monthYear = date.toLocaleString('default', {
           month: 'long',
           year: 'numeric',
         });
 
-      if (!grouped[monthYear]) {
-        grouped[monthYear] = [];
-      }
+        if (!grouped[monthYear]) {
+          grouped[monthYear] = [];
+        }
+        grouped[monthYear].push(video);
+      });
 
-      grouped[monthYear].push(video);
-    });
-
-    // FORMAT FOR SECTION LIST
-    const formattedSections =
-      Object.keys(grouped).map((month) => ({
+      // FORMAT FOR SECTION LIST
+      const formattedSections = Object.keys(grouped).map((month) => ({
         title: `Videos of ${month}`,
         data: chunkArray(grouped[month], 3),
       }));
 
-    setSections(formattedSections);
+      setSections(formattedSections);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -125,109 +94,77 @@ const Videos = () => {
   }, []);
 
   const toggleSelect = useCallback((id) => {
-
     setSelected((prevSelected) => {
-
-      const newSelected =
-        new Set(prevSelected);
-
+      const newSelected = new Set(prevSelected);
       if (newSelected.has(id)) {
-
         newSelected.delete(id);
-
       } else {
-
         newSelected.add(id);
       }
-
       return newSelected;
     });
-
   }, []);
 
+  // Memoizing data maps stops list skipping frames when items are checked
+  const renderedSections = useMemo(() => sections, [sections]);
+
   // RENDER ROW OF 3 VIDEOS
-  const renderRow = ({ item }) => {
-
-    return (
-
-      <View style={styles.row}>
-
-        {item.map((video) => {
-
-          const isSelected =
-            selected.has(video.id);
-
-          return (
-
-            <TouchableOpacity
-              key={video.id}
-              onPress={() =>
-                toggleSelect(video.id)
-              }
-              activeOpacity={0.7}
-            >
-
-              <Image
-                source={{
-                  uri:
-                    video.thumbnail ||
-                    video.uri,
-                }}
-                style={[
-                  styles.image,
-                  isSelected &&
-                    styles.selectedImage,
-                ]}
+  const renderRow = useCallback(({ item }) => (
+    <View style={styles.row}>
+      {item.map((video) => {
+        const isSelected = selected.has(video.id);
+        return (
+          <TouchableOpacity
+            key={video.id}
+            onPress={() => toggleSelect(video.id)}
+            activeOpacity={0.7}
+            style={styles.imageContainer}
+          >
+            <Image
+              source={{ uri: video.thumbnail || video.uri }}
+              style={[styles.image, isSelected && styles.selectedImage]}
+            />
+            <View style={styles.checkboxContainer}>
+              <Checkbox
+                value={isSelected}
+                onValueChange={() => toggleSelect(video.id)}
+                color={isSelected ? '#4630EB' : undefined}
               />
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  ), [selected, toggleSelect]);
 
-              <View style={styles.checkboxContainer}>
+  const renderSectionHeader = useCallback(({ section: { title } }) => (
+    <Text style={styles.sectionHeader}>{title}</Text>
+  ), []);
 
-                <Checkbox
-                  value={isSelected}
-                  onValueChange={() =>
-                    toggleSelect(video.id)
-                  }
-                  color={
-                    isSelected
-                      ? '#4630EB'
-                      : undefined
-                  }
-                />
-
-              </View>
-
-            </TouchableOpacity>
-          );
-        })}
-
+  // Full-screen Activity Indicator display wrapper
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4630EB" />
+        <Text style={styles.loadingText}>Loading Videos...</Text>
       </View>
     );
-  };
+  }
 
   return (
     <View style={styles.container}>
-
       <SectionList
-        sections={sections}
-        keyExtractor={(item, index) =>
-          index.toString()
-        }
-        contentContainerStyle={
-          styles.listContent
-        }
-        renderSectionHeader={({
-          section,
-        }) => (
-
-          <Text style={styles.sectionHeader}>
-            {section.title}
-          </Text>
-
-        )}
+        sections={renderedSections}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.listContent}
+        renderSectionHeader={renderSectionHeader}
         renderItem={renderRow}
-        stickySectionHeadersEnabled={false}
+        stickySectionHeadersEnabled
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
       />
-
     </View>
   );
 };
@@ -239,41 +176,51 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-
   listContent: {
     paddingBottom: 100,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
   },
-
   sectionHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 15,
-    marginBottom: 8,
-    paddingLeft: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    backgroundColor: '#F2F2F2',
   },
-
   row: {
     flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: 4,
   },
-
+  imageContainer: {
+    position: 'relative',
+    marginHorizontal: 2,
+  },
   image: {
     width: IMAGE_SIZE,
     height: IMAGE_SIZE,
-    margin: 2,
     borderRadius: 5,
     backgroundColor: '#D2D2D2',
   },
-
   selectedImage: {
     opacity: 0.6,
   },
-
   checkboxContainer: {
     position: 'absolute',
     top: 8,
     right: 8,
     borderRadius: 4,
     padding: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
   },
 });
