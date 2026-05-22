@@ -5,6 +5,8 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 // to use downloaded fonts
 import { useFonts } from 'expo-font'
+////Change status bar color
+import { StatusBar } from 'expo-status-bar';
 
 // Import screens
 import Menu from './screens/Menu';
@@ -40,8 +42,9 @@ if (!fontsLoaded) return null;/// Dont render the app until the fonts are loaded
 
   return (
     <NavigationContainer>
+      <StatusBar backgroundColor='black' style="light" translucent={false}/>
+
       <Stack.Navigator initialRouteName="Menu" >
-        
         <Stack.Screen name="Menu" component={Menu} options={{ headerShown: false}}/>
         <Stack.Screen name="Send" component={Send} options={{ headerShown: false}}/>
         <Stack.Screen name="Receive" component={Receive} options={{ headerShown: false}}/>
