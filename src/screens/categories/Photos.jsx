@@ -54,7 +54,7 @@ const Photos = () => {
     const media =
       await MediaLibrary.getAssetsAsync({
         mediaType: 'photo',
-        first: 100,
+        first: 30,
         sortBy: [['creationTime', false]],
       });
 
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     width: image_size,
     height: image_size,
     marginHorizontal: 2,
-    borderRadius: 4,
+    borderRadius: 1,
   },
   selectedImage: {
     opacity: 0.6,

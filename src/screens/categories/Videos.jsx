@@ -43,7 +43,7 @@ const Videos = () => {
 
       const media = await MediaLibrary.getAssetsAsync({
         mediaType: MediaLibrary.MediaType.video,
-        first: 50,
+        first: 30,
         sortBy: [['creationTime', false]], // Keep sort array structure predictable
       });
 

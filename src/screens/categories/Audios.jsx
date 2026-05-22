@@ -55,7 +55,7 @@ const Audios = () => {
         await MediaLibrary.getAssetsAsync({
           mediaType:
             MediaLibrary.MediaType.audio,
-          first: 100,
+          first: 30,
           sortBy: [
             MediaLibrary.SortBy.creationTime,
           ],
