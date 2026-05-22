@@ -130,7 +130,7 @@ const Photos = () => {
               <Checkbox
                 value={isSelected}
                 onValueChange={() => toggleSelect(photo.id)}
-                color={isSelected ? '#4630EB' : undefined}
+                color={isSelected ? '#000000' : undefined}
               />
             </View>
           </TouchableOpacity>
@@ -151,7 +151,7 @@ const Photos = () => {
 
       <ActivityIndicator
         size="large"
-        color="#4630EB"
+        color="#000000"
       />
 
       <Text style={styles.loadingText}>
@@ -187,7 +187,7 @@ export default Photos;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F2F2F2',
   },
   listContent: {
     paddingBottom: 100,
@@ -195,10 +195,10 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 18,
-    fontWeight: 'bold',
     paddingVertical: 10,
     paddingHorizontal: 5,
     backgroundColor: '#F2F2F2',
+    fontFamily: 'Poppins',
   },
   row: {
     flexDirection: 'row',
@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
     right: 8,
     borderRadius: 4,
     padding: 2,
+    borderColor: 'red'
   },
   loadingContainer: {
     flex: 1,

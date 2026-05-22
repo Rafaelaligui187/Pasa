@@ -128,7 +128,7 @@ const Videos = () => {
               <Checkbox
                 value={isSelected}
                 onValueChange={() => toggleSelect(video.id)}
-                color={isSelected ? '#4630EB' : undefined}
+                color={isSelected ? '#000000' : undefined}
               />
             </View>
           </TouchableOpacity>
@@ -144,8 +144,9 @@ const Videos = () => {
   // Full-screen Activity Indicator display wrapper
   if (loading) {
     return (
+      ///////Loading state with Activity Indicator
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4630EB" />
+        <ActivityIndicator size="large" color="#000000" />
         <Text style={styles.loadingText}>Loading Videos...</Text>
       </View>
     );
@@ -174,7 +175,7 @@ export default Videos;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F2F2F2',
   },
   listContent: {
     paddingBottom: 100,
@@ -182,10 +183,10 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 18,
-    fontWeight: 'bold',
     paddingVertical: 12,
     paddingHorizontal: 6,
     backgroundColor: '#F2F2F2',
+    fontFamily: 'Poppins',
   },
   row: {
     flexDirection: 'row',

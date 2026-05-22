@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 
 import * as MediaLibrary from 'expo-media-library';
@@ -44,7 +45,7 @@ const Audios = () => {
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.audioCard}>
             <Text style={styles.audioTitle}>
-              {item.filename}
+              {item.filename} <Image source={require('../../../assets/Images/mp3_icon.png')} style={{ width: 18, height: 18 }} />
             </Text>
             <Text style={styles.audioInfo}>
               {Math.floor(item.duration)} sec
@@ -66,12 +67,13 @@ const styles = StyleSheet.create({
   audioCard: {
     padding: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    marginBottom: 10,
+    borderColor: '#000000',
+    borderRadius: 5,
+    marginBottom: 3,
   },
   audioTitle: {
     fontSize: 16,
+    fontFamily: 'Poppins',
   },
   audioInfo: {
     marginTop: 5,
