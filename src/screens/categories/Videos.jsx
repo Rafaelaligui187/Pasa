@@ -1,7 +1,12 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  memo,
+} from 'react';
+
 import {
   View,
-  Image,
   SectionList,
   StyleSheet,
   Dimensions,
@@ -10,82 +15,274 @@ import {
   Text,
   ActivityIndicator,
 } from 'react-native';
+
 import * as MediaLibrary from 'expo-media-library';
 import * as VideoThumbnails from 'expo-video-thumbnails';
+
 import Checkbox from 'expo-checkbox';
 
-const { width: screenWidth } = Dimensions.get('window');
-const IMAGE_SIZE = (screenWidth - 20) / 3; // Standardized grid metric constraints
+// BETTER IMAGE PERFORMANCE
+import { Image } from 'expo-image';
 
-// Split videos into rows of 3
+const { width: screenWidth } =
+  Dimensions.get('window');
+
+const IMAGE_SIZE =
+  (screenWidth - 20) / 3;
+
+const VIDEOS_PER_LOAD = 20;
+
+// CHUNK ARRAY
 const chunkArray = (array, size) => {
   const result = [];
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
+
+  for (
+    let i = 0;
+    i < array.length;
+    i += size
+  ) {
+    result.push(
+      array.slice(i, i + size)
+    );
   }
+
   return result;
 };
 
-const Videos = () => {
-  const [sections, setSections] = useState([]);
-  const [selected, setSelected] = useState(new Set());
-  const [loading, setLoading] = useState(true);
+// MEMOIZED VIDEO ROW
+const VideoRow = memo(
+  ({
+    item,
+    selected,
+    toggleSelect,
+  }) => {
+    return (
+      <View style={styles.row}>
+        {item.map((video) => {
+          const isSelected =
+            selected.has(video.id);
 
-  const getVideos = async () => {
+          return (
+            <TouchableOpacity
+              key={video.id}
+              onPress={() =>
+                toggleSelect(video.id)
+              }
+              activeOpacity={0.8}
+              style={
+                styles.imageContainer
+              }
+            >
+              <Image
+                source={
+                  video.thumbnail ||
+                  video.uri
+                }
+                style={[
+                  styles.image,
+                  isSelected &&
+                    styles.selectedImage,
+                ]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={100}
+              />
+
+              {/* VIDEO ICON */}
+              <View
+                style={styles.videoBadge}
+              >
+                <Text
+                  style={
+                    styles.videoText
+                  }
+                >
+                  ▶
+                </Text>
+              </View>
+
+              <View
+                style={
+                  styles.checkboxContainer
+                }
+              >
+                <Checkbox
+                  value={isSelected}
+                  onValueChange={() =>
+                    toggleSelect(
+                      video.id
+                    )
+                  }
+                  color={
+                    isSelected
+                      ? '#000000'
+                      : undefined
+                  }
+                />
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  }
+);
+
+const Videos = () => {
+  const [sections, setSections] =
+    useState([]);
+
+  const [selected, setSelected] =
+    useState(new Set());
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [
+    loadingMore,
+    setLoadingMore,
+  ] = useState(false);
+
+  const [endCursor, setEndCursor] =
+    useState(null);
+
+  const [
+    hasNextPage,
+    setHasNextPage,
+  ] = useState(true);
+
+  // LOAD VIDEOS
+  const getVideos = async (
+    after = null
+  ) => {
     try {
-      setLoading(true);
-      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (after) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      const { status } =
+        await MediaLibrary.requestPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please allow media access to view videos.');
+        Alert.alert(
+          'Permission Denied',
+          'Please allow media access to view videos.'
+        );
+
         return;
       }
 
-      const media = await MediaLibrary.getAssetsAsync({
-        mediaType: MediaLibrary.MediaType.video,
-        first: 30,
-        sortBy: [['creationTime', false]], // Keep sort array structure predictable
-      });
+      const media =
+        await MediaLibrary.getAssetsAsync(
+          {
+            mediaType:
+              MediaLibrary.MediaType
+                .video,
 
-      const videoData = await Promise.all(
-        media.assets.map(async (video) => {
-          try {
-            const { uri } = await VideoThumbnails.getThumbnailAsync(video.uri, {
-              time: 1000,
-            });
-            return { ...video, thumbnail: uri };
-          } catch (e) {
-            return { ...video, thumbnail: null };
+            first: VIDEOS_PER_LOAD,
+
+            after,
+
+            sortBy: [
+              [
+                'creationTime',
+                false,
+              ],
+            ],
           }
-        })
+        );
+
+      setEndCursor(media.endCursor);
+
+      setHasNextPage(
+        media.hasNextPage
       );
 
-      // GROUP VIDEOS BY MONTH/YEAR
-      const grouped = {};
-      videoData.forEach((video) => {
-        const date = new Date(video.creationTime);
-        const monthYear = date.toLocaleString('default', {
-          month: 'long',
-          year: 'numeric',
-        });
+      // GENERATE THUMBNAILS
+      const videoData =
+        await Promise.all(
+          media.assets.map(
+            async (video) => {
+              try {
+                const { uri } =
+                  await VideoThumbnails.getThumbnailAsync(
+                    video.uri,
+                    {
+                      time: 1000,
+                    }
+                  );
 
-        if (!grouped[monthYear]) {
-          grouped[monthYear] = [];
+                return {
+                  ...video,
+                  thumbnail: uri,
+                };
+              } catch {
+                return {
+                  ...video,
+                  thumbnail: null,
+                };
+              }
+            }
+          )
+        );
+
+      // GROUP BY FULL DATE
+      const grouped = {};
+
+      videoData.forEach((video) => {
+        const date = new Date(
+          video.creationTime
+        );
+
+        const fullDate =
+          date.toLocaleDateString(
+            'default',
+            {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            }
+          );
+
+        if (!grouped[fullDate]) {
+          grouped[fullDate] = [];
         }
-        grouped[monthYear].push(video);
+
+        grouped[fullDate].push(
+          video
+        );
       });
 
-      // FORMAT FOR SECTION LIST
-      const formattedSections = Object.keys(grouped).map((month) => ({
-        title: `Videos of ${month}`,
-        data: chunkArray(grouped[month], 3),
-      }));
+      // FORMAT SECTION DATA
+      const newSections =
+        Object.keys(grouped).map(
+          (date) => ({
+            title: `Videos on ${date}`,
+            data: chunkArray(
+              grouped[date],
+              3
+            ),
+          })
+        );
 
-      setSections(formattedSections);
+      // APPEND PAGINATION
+      setSections((prev) => {
+        if (!after) {
+          return newSections;
+        }
+
+        return [
+          ...prev,
+          ...newSections,
+        ];
+      });
     } catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -93,61 +290,83 @@ const Videos = () => {
     getVideos();
   }, []);
 
-  const toggleSelect = useCallback((id) => {
-    setSelected((prevSelected) => {
-      const newSelected = new Set(prevSelected);
-      if (newSelected.has(id)) {
-        newSelected.delete(id);
-      } else {
-        newSelected.add(id);
-      }
-      return newSelected;
-    });
-  }, []);
+  // LOAD MORE
+  const loadMore = () => {
+    if (
+      loadingMore ||
+      !hasNextPage
+    ) {
+      return;
+    }
 
-  // Memoizing data maps stops list skipping frames when items are checked
-  const renderedSections = useMemo(() => sections, [sections]);
+    getVideos(endCursor);
+  };
 
-  // RENDER ROW OF 3 VIDEOS
-  const renderRow = useCallback(({ item }) => (
-    <View style={styles.row}>
-      {item.map((video) => {
-        const isSelected = selected.has(video.id);
-        return (
-          <TouchableOpacity
-            key={video.id}
-            onPress={() => toggleSelect(video.id)}
-            activeOpacity={0.7}
-            style={styles.imageContainer}
-          >
-            <Image
-              source={{ uri: video.thumbnail || video.uri }}
-              style={[styles.image, isSelected && styles.selectedImage]}
-            />
-            <View style={styles.checkboxContainer}>
-              <Checkbox
-                value={isSelected}
-                onValueChange={() => toggleSelect(video.id)}
-                color={isSelected ? '#000000' : undefined}
-              />
-            </View>
-          </TouchableOpacity>
+  // SELECT VIDEO
+  const toggleSelect =
+    useCallback((id) => {
+      setSelected((prev) => {
+        const updated = new Set(
+          prev
         );
-      })}
-    </View>
-  ), [selected, toggleSelect]);
 
-  const renderSectionHeader = useCallback(({ section: { title } }) => (
-    <Text style={styles.sectionHeader}>{title}</Text>
-  ), []);
+        if (updated.has(id)) {
+          updated.delete(id);
+        } else {
+          updated.add(id);
+        }
 
-  // Full-screen Activity Indicator display wrapper
+        return updated;
+      });
+    }, []);
+
+  // RENDER ROW
+  const renderRow = useCallback(
+    ({ item }) => (
+      <VideoRow
+        item={item}
+        selected={selected}
+        toggleSelect={toggleSelect}
+      />
+    ),
+    [selected]
+  );
+
+  // HEADER
+  const renderSectionHeader =
+    useCallback(
+      ({ section: { title } }) => (
+        <Text
+          style={
+            styles.sectionHeader
+          }
+        >
+          {title}
+        </Text>
+      ),
+      []
+    );
+
+  // LOADING
   if (loading) {
     return (
-      ///////Loading state with Activity Indicator
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000000" />
-        <Text style={styles.loadingText}>Loading Videos...</Text>
+      <View
+        style={
+          styles.loadingContainer
+        }
+      >
+        <ActivityIndicator
+          size="large"
+          color="#000"
+        />
+
+        <Text
+          style={
+            styles.loadingText
+          }
+        >
+          Loading Videos...
+        </Text>
       </View>
     );
   }
@@ -155,16 +374,48 @@ const Videos = () => {
   return (
     <View style={styles.container}>
       <SectionList
-        sections={renderedSections}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.listContent}
-        renderSectionHeader={renderSectionHeader}
+        sections={sections}
         renderItem={renderRow}
+        renderSectionHeader={
+          renderSectionHeader
+        }
+        keyExtractor={(
+          item,
+          index
+        ) => index.toString()}
         stickySectionHeadersEnabled
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-        removeClippedSubviews={true}
+        contentContainerStyle={
+          styles.listContent
+        }
+
+        // PERFORMANCE
+        initialNumToRender={6}
+        maxToRenderPerBatch={4}
+        windowSize={3}
+        updateCellsBatchingPeriod={
+          50
+        }
+        removeClippedSubviews={
+          true
+        }
+
+        // LOAD MORE
+        onEndReached={loadMore}
+        onEndReachedThreshold={
+          0.3
+        }
+
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator
+              size="small"
+              color="#000"
+              style={{
+                marginVertical: 20,
+              }}
+            />
+          ) : null
+        }
       />
     </View>
   );
@@ -182,15 +433,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionHeader: {
-    fontSize: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
+    fontSize: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     backgroundColor: '#F2F2F2',
-    fontFamily: 'Poppins',
+    fontWeight: '600',
+    color: '#444',
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
     marginBottom: 4,
   },
   imageContainer: {
@@ -210,8 +461,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    borderRadius: 4,
-    padding: 2,
+  },
+  videoBadge: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    backgroundColor:
+      'rgba(0, 0, 0, 0.6)',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  videoText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,

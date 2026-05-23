@@ -1,7 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  memo,
+} from 'react';
+
 import {
   View,
-  Image,
   SectionList,
   StyleSheet,
   Dimensions,
@@ -10,173 +15,272 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+
 import * as MediaLibrary from 'expo-media-library';
 import Checkbox from 'expo-checkbox';
 
-const { width: screenWidth } = Dimensions.get('window');
-const image_size = (screenWidth - 22) / 3; // Adjusted for padding and margins
+// IMPORTANT
+import { Image } from 'expo-image';
 
-// Helper function to chunk array into sets of 3
+const { width: screenWidth } = Dimensions.get('window');
+
+const image_size = (screenWidth - 22) / 3;
+
+const PHOTOS_PER_LOAD = 30;
+
+// Chunk helper
 const chunkArray = (array, size) => {
   const result = [];
+
   for (let i = 0; i < array.length; i += size) {
     result.push(array.slice(i, i + size));
   }
+
   return result;
 };
 
-const Photos = () => {
-  const [sections, setSections] = useState([]);
-  const [selected, setSelected] = useState(new Set()); // Changed to Set for O(1) lookups
-  const [loading, setLoading] = useState(true);
-
-  const getPhotos = async () => {
-
-  try {
-
-    setLoading(true);
-
-    const { status } =
-      await MediaLibrary.requestPermissionsAsync();
-
-    if (status !== 'granted') {
-
-      Alert.alert(
-        'Permission Denied',
-        'Please allow media access to view photos.'
-      );
-
-      setLoading(false);
-
-      return;
-    }
-
-    const media =
-      await MediaLibrary.getAssetsAsync({
-        mediaType: 'photo',
-        first: 30,
-        sortBy: [['creationTime', false]],
-      });
-
-    const grouped = {};
-
-    media.assets.forEach((photo) => {
-
-      const date =
-        new Date(photo.creationTime);
-
-      const monthYear =
-        date.toLocaleString('default', {
-          month: 'long',
-          year: 'numeric',
-        });
-
-      if (!grouped[monthYear]) {
-        grouped[monthYear] = [];
-      }
-
-      grouped[monthYear].push(photo);
-    });
-
-    const formattedSections =
-      Object.keys(grouped).map((month) => ({
-        title: `Photos of ${month}`,
-        data: chunkArray(grouped[month], 3),
-      }));
-
-    setSections(formattedSections);
-
-  } catch (error) {
-
-    console.log(error);
-
-  } finally {
-
-    setLoading(false);
-  }
-};
-
-  useEffect(() => {
-    getPhotos();
-  }, []);
-
-  const toggleSelect = useCallback((id) => {
-    setSelected((prevSelected) => {
-      const newSelected = new Set(prevSelected);
-      if (newSelected.has(id)) {
-        newSelected.delete(id);
-      } else {
-        newSelected.add(id);
-      }
-      return newSelected;
-    });
-  }, []);
-
-  const renderRow = useCallback(({ item }) => (
+// Memoized Row Component
+const PhotoRow = memo(({ item, selected, toggleSelect }) => {
+  return (
     <View style={styles.row}>
       {item.map((photo) => {
         const isSelected = selected.has(photo.id);
+
         return (
           <TouchableOpacity
             key={photo.id}
             onPress={() => toggleSelect(photo.id)}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
             <Image
-              source={{ uri: photo.uri }}
-              style={[styles.image, isSelected && styles.selectedImage]}
+              source={photo.uri}
+              style={[
+                styles.image,
+                isSelected && styles.selectedImage,
+              ]}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={100}
             />
+
             <View style={styles.checkboxContainer}>
               <Checkbox
                 value={isSelected}
-                onValueChange={() => toggleSelect(photo.id)}
-                color={isSelected ? '#000000' : undefined}
+                onValueChange={() =>
+                  toggleSelect(photo.id)
+                }
+                color={
+                  isSelected
+                    ? '#000000'
+                    : undefined
+                }
               />
             </View>
           </TouchableOpacity>
         );
       })}
     </View>
-  ), [selected, toggleSelect]);
+  );
+});
 
-  const renderSectionHeader = useCallback(({ section: { title } }) => (
-    <Text style={styles.sectionHeader}>{title}</Text>
-  ), []);
+const Photos = () => {
+  const [sections, setSections] = useState([]);
+  const [selected, setSelected] = useState(
+    new Set()
+  );
+
+  const [loading, setLoading] = useState(true);
+
+  const [loadingMore, setLoadingMore] =
+    useState(false);
+
+  const [endCursor, setEndCursor] =
+    useState(null);
+
+  const [hasNextPage, setHasNextPage] =
+    useState(true);
+
+  // LOAD PHOTOS
+  const getPhotos = async (after = null) => {
+    try {
+      if (after) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      const { status } =
+        await MediaLibrary.requestPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Denied',
+          'Please allow media access.'
+        );
+
+        return;
+      }
+
+      const media =
+        await MediaLibrary.getAssetsAsync({
+          mediaType: 'photo',
+          first: PHOTOS_PER_LOAD,
+          after,
+          sortBy: [
+            ['creationTime', false],
+          ],
+        });
+
+      setEndCursor(media.endCursor);
+
+      setHasNextPage(media.hasNextPage);
+
+      const grouped = {};
+
+      media.assets.forEach((photo) => {
+
+        const date = new Date(photo.creationTime);
+
+        // FULL DATE
+        const fullDate =
+          date.toLocaleDateString('default', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          });
+
+        if (!grouped[fullDate]) {
+          grouped[fullDate] = [];
+        }
+
+        grouped[fullDate].push(photo);
+      });
+
+      const newSections = Object.keys(grouped).map(
+        (date) => ({
+          title: `Photos on ${date}`,
+          data: chunkArray(grouped[date], 3),
+        })
+      );
+
+      // APPEND NEW DATA
+      setSections((prev) => {
+        if (!after) {
+          return newSections;
+        }
+
+        return [...prev, ...newSections];
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    getPhotos();
+  }, []);
+
+  const loadMore = () => {
+    if (
+      loadingMore ||
+      !hasNextPage
+    ) {
+      return;
+    }
+
+    getPhotos(endCursor);
+  };
+
+  const toggleSelect = useCallback((id) => {
+    setSelected((prev) => {
+      const updated = new Set(prev);
+
+      if (updated.has(id)) {
+        updated.delete(id);
+      } else {
+        updated.add(id);
+      }
+
+      return updated;
+    });
+  }, []);
+
+  const renderRow = useCallback(
+    ({ item }) => (
+      <PhotoRow
+        item={item}
+        selected={selected}
+        toggleSelect={toggleSelect}
+      />
+    ),
+    [selected]
+  );
+
+  const renderHeader = useCallback(
+    ({ section: { title } }) => (
+      <Text style={styles.sectionHeader}>
+        {title}
+      </Text>
+    ),
+    []
+  );
 
   if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator
+          size="large"
+          color="#000"
+        />
 
-  return (
-
-    <View style={styles.loadingContainer}>
-
-      <ActivityIndicator
-        size="large"
-        color="#000000"
-      />
-
-      <Text style={styles.loadingText}>
-        Loading Photos...
-      </Text>
-
-    </View>
-  );
-}
+        <Text style={styles.loadingText}>
+          Loading Photos...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <SectionList
         sections={sections}
+        renderItem={renderRow}
+        renderSectionHeader={
+          renderHeader
+        }
         keyExtractor={(item, index) =>
           index.toString()
         }
-        contentContainerStyle={styles.listContent}
-        renderSectionHeader={renderSectionHeader}
-        renderItem={renderRow}
         stickySectionHeadersEnabled
-        initialNumToRender={12}
-        maxToRenderPerBatch={12}
-        windowSize={5}
+        contentContainerStyle={
+          styles.listContent
+        }
+
+        // PERFORMANCE
+        initialNumToRender={9}
+        maxToRenderPerBatch={6}
+        windowSize={3}
         removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
+
+        // LOAD MORE
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator
+              size="small"
+              color="#000"
+              style={{
+                marginVertical: 20,
+              }}
+            />
+          ) : null
+        }
       />
     </View>
   );
@@ -194,22 +298,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   sectionHeader: {
-    fontSize: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 5,
+    fontSize: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     backgroundColor: '#F2F2F2',
+    fontWeight: '600',
+    color: '#444',
     fontFamily: 'Poppins',
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
     marginBottom: 4,
   },
   image: {
     width: image_size,
     height: image_size,
     marginHorizontal: 2,
-    borderRadius: 1,
+    borderRadius: 2,
   },
   selectedImage: {
     opacity: 0.6,
@@ -218,9 +323,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    borderRadius: 4,
-    padding: 2,
-    borderColor: 'red'
   },
   loadingContainer: {
     flex: 1,
