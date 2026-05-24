@@ -50,23 +50,26 @@ const chunkArray = (array, size) => {
 };
 
 // MEMOIZED VIDEO ROW
-const VideoRow = memo(
+const VideoRow = React.memo(
   ({
     item,
-    selected,
+    selectedFiles,
     toggleSelect,
   }) => {
     return (
       <View style={styles.row}>
         {item.map((video) => {
           const isSelected =
-            selected.has(video.id);
+          selectedFiles.some(
+            (item) =>
+              item.id === video.id
+          );
 
           return (
             <TouchableOpacity
               key={video.id}
               onPress={() =>
-                toggleSelect(video.id)
+                toggleSelect(video)
               }
               activeOpacity={0.8}
               style={
@@ -109,9 +112,7 @@ const VideoRow = memo(
                 <Checkbox
                   value={isSelected}
                   onValueChange={() =>
-                    toggleSelect(
-                      video.id
-                    )
+                    toggleSelect(video)
                   }
                   color={
                     isSelected
@@ -128,12 +129,12 @@ const VideoRow = memo(
   }
 );
 
-const Videos = () => {
+const Videos = ({
+    selectedFiles,
+    setSelectedFiles,
+  }) => {
   const [sections, setSections] =
     useState([]);
-
-  const [selected, setSelected] =
-    useState(new Set());
 
   const [loading, setLoading] =
     useState(true);
@@ -304,32 +305,44 @@ const Videos = () => {
 
   // SELECT VIDEO
   const toggleSelect =
-    useCallback((id) => {
-      setSelected((prev) => {
-        const updated = new Set(
-          prev
+  useCallback((video) => {
+
+    setSelectedFiles((prev) => {
+
+      const exists =
+        prev.find(
+          (item) =>
+            item.id === video.id
         );
 
-        if (updated.has(id)) {
-          updated.delete(id);
-        } else {
-          updated.add(id);
-        }
+      if (exists) {
 
-        return updated;
-      });
-    }, []);
+        return prev.filter(
+          (item) =>
+            item.id !== video.id
+        );
+
+      } else {
+
+        return [
+          ...prev,
+          video,
+        ];
+      }
+    });
+
+  }, []);
 
   // RENDER ROW
   const renderRow = useCallback(
     ({ item }) => (
       <VideoRow
         item={item}
-        selected={selected}
+        selectedFiles={selectedFiles}
         toggleSelect={toggleSelect}
       />
     ),
-    [selected]
+    [selectedFiles]
   );
 
   // HEADER
@@ -376,43 +389,30 @@ const Videos = () => {
       <SectionList
         sections={sections}
         renderItem={renderRow}
-        renderSectionHeader={
-          renderSectionHeader
-        }
-        keyExtractor={(
-          item,
-          index
-        ) => index.toString()}
+        renderSectionHeader={renderSectionHeader}
+        keyExtractor={(item, index) => index.toString()}
         stickySectionHeadersEnabled
-        contentContainerStyle={
-          styles.listContent
-        }
+        contentContainerStyle={styles.listContent}
+        
+        // ADD THIS LINE TO FIX THE CHECKBOXES
+        extraData={selectedFiles} 
 
         // PERFORMANCE
         initialNumToRender={6}
         maxToRenderPerBatch={4}
         windowSize={3}
-        updateCellsBatchingPeriod={
-          50
-        }
-        removeClippedSubviews={
-          true
-        }
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
 
         // LOAD MORE
         onEndReached={loadMore}
-        onEndReachedThreshold={
-          0.3
-        }
-
+        onEndReachedThreshold={0.3}
         ListFooterComponent={
           loadingMore ? (
             <ActivityIndicator
               size="small"
               color="#000"
-              style={{
-                marginVertical: 20,
-              }}
+              style={{ marginVertical: 20 }}
             />
           ) : null
         }

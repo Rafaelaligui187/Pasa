@@ -1,70 +1,129 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React, {useState} from 'react'
+import {
+  StyleSheet,
+  View,
+  Alert,
+} from 'react-native';
 
-///Imported Header amd Footer screen
+import React, {
+  useState,
+} from 'react';
+
+/// COMPONENTS
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
-///Imported Categories screens
-// import Applications from '../screens/categories/Applications';
+/// CATEGORY SCREENS
 import Photos from '../screens/categories/Photos';
 import Files from '../screens/categories/Files';
 import Audios from '../screens/categories/Audios';
 import Videos from '../screens/categories/Videos';
 
-
 const SelectCategory = () => {
 
-  const [selectedCategory, setSelectedCategory] = useState('Photos'); ///Change this to Apps if available
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] = useState('Photos');
 
-  ///////Fucntion to render the selected category screen
+  // GLOBAL SELECTED FILES
+  const [
+    selectedFiles,
+    setSelectedFiles,
+  ] = useState([]);
+
+  // RENDER SCREEN
   const renderScreen = () => {
+
+    const sharedProps = {
+      selectedFiles,
+      setSelectedFiles,
+    };
+
     switch (selectedCategory) {
-      // case 'Applications':
-      //   return <Applications />;
-      
+
       case 'Photos':
-        return <Photos />;
+        return (
+          <Photos
+            {...sharedProps}
+          />
+        );
 
       case 'Files':
-        return <Files/>;
-      
+        return (
+          <Files
+            {...sharedProps}
+          />
+        );
+
       case 'Audios':
-        return <Audios/>;
+        return (
+          <Audios
+            {...sharedProps}
+          />
+        );
 
       case 'Videos':
-        return <Videos/>;
-      
+        return (
+          <Videos
+            {...sharedProps}
+          />
+        );
+
       default:
-        return <Applications/>;
+        return null;
     }
+  };
+
+  // SEND BUTTON
+  const handleSend = () => {
+
+    console.log(
+      'Selected Files:',
+      selectedFiles
+    );
+
+    Alert.alert(
+      'Files Selected',
+      `${selectedFiles.length} file(s) selected`
+    );
   };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+
+      {/* HEADER */}
       <Header
         selected={selectedCategory}
-        setSelected={setSelectedCategory}
+        setSelected={
+          setSelectedCategory
+        }
       />
-      {/* Body */}
+
+      {/* BODY */}
       <View style={styles.content}>
         {renderScreen()}
       </View>
-      {/* Footer */}
-      <Footer />
+
+      {/* FOOTER */}
+      <Footer
+        selectedCount={
+          selectedFiles.length
+        }
+        onSend={handleSend}
+      />
 
     </View>
-  )
-}
+  );
+};
 
-export default SelectCategory
+export default SelectCategory;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   content: {
     flex: 1,
   },
-})
+});

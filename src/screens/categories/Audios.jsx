@@ -18,7 +18,10 @@ import * as MediaLibrary from 'expo-media-library';
 
 import Checkbox from 'expo-checkbox';
 
-const Audios = () => {
+const Audios = ({
+  selectedFiles,
+  setSelectedFiles,
+}) => {
 
   const [audioFiles, setAudioFiles] =
     useState([]);
@@ -26,13 +29,11 @@ const Audios = () => {
   const [loading, setLoading] =
     useState(true);
 
-  const [selected, setSelected] =
-    useState(new Set());
-
   useEffect(() => {
     getAudioFiles();
   }, []);
 
+  // LOAD AUDIO FILES
   const getAudioFiles = async () => {
 
     try {
@@ -46,8 +47,6 @@ const Audios = () => {
 
         alert('Permission denied');
 
-        setLoading(false);
-
         return;
       }
 
@@ -55,9 +54,12 @@ const Audios = () => {
         await MediaLibrary.getAssetsAsync({
           mediaType:
             MediaLibrary.MediaType.audio,
+
           first: 30,
+
           sortBy: [
-            MediaLibrary.SortBy.creationTime,
+            MediaLibrary.SortBy
+              .creationTime,
           ],
         });
 
@@ -73,117 +75,184 @@ const Audios = () => {
     }
   };
 
-  const toggleSelect = useCallback((id) => {
+  // SELECT AUDIO
+  const toggleSelect =
+    useCallback((audio) => {
 
-    setSelected((prevSelected) => {
-      const newSelected =
-        new Set(prevSelected);
+      setSelectedFiles((prev) => {
 
-      if (newSelected.has(id)) {
+        const exists =
+          prev.find(
+            (item) =>
+              item.id === audio.id
+          );
 
-        newSelected.delete(id);
+        if (exists) {
 
-      } else {
+          return prev.filter(
+            (item) =>
+              item.id !== audio.id
+          );
 
-        newSelected.add(id);
-      }
-      return newSelected;
-    });
+        } else {
 
-  }, []);
+          return [
+            ...prev,
+            audio,
+          ];
+        }
+      });
 
-  const formatDuration = (seconds) => {
+    }, []);
+
+  // FORMAT AUDIO DURATION
+  const formatDuration = (
+    seconds
+  ) => {
+
     const mins =
       Math.floor(seconds / 60);
+
     const secs =
       Math.floor(seconds % 60);
+
     return `${mins}:${
       secs < 10 ? '0' : ''
     }${secs}`;
   };
 
+  // RENDER AUDIO ITEM
   const renderItem = useCallback(
     ({ item }) => {
 
       const isSelected =
-        selected.has(item.id);
+        selectedFiles.some(
+          (audio) =>
+            audio.id === item.id
+        );
 
       return (
         <TouchableOpacity
           style={[
             styles.audioCard,
+
             isSelected &&
               styles.selectedCard,
           ]}
+
           activeOpacity={0.7}
+
           onPress={() =>
-            toggleSelect(item.id)
+            toggleSelect(item)
           }
         >
 
           <View style={styles.leftContent}>
+
             <Image
               source={require('../../../assets/Images/mp3_icon.png')}
               style={styles.icon}
             />
-            <View style={styles.textContainer}>
+
+            <View
+              style={
+                styles.textContainer
+              }
+            >
+
               <Text
-                style={styles.audioTitle}
+                style={
+                  styles.audioTitle
+                }
                 numberOfLines={1}
               >
                 {item.filename}
               </Text>
-              <Text style={styles.audioInfo}>
+
+              <Text
+                style={
+                  styles.audioInfo
+                }
+              >
                 {formatDuration(
                   item.duration || 0
                 )}
               </Text>
+
             </View>
+
           </View>
 
           <Checkbox
             value={isSelected}
             onValueChange={() =>
-              toggleSelect(item.id)
+              toggleSelect(item)
             }
-            color={isSelected ? '#000000' : undefined}
+            color={
+              isSelected
+                ? '#000'
+                : undefined
+            }
           />
+
         </TouchableOpacity>
       );
     },
-    [selected, toggleSelect]
+
+    [selectedFiles]
   );
 
+  // LOADING
   if (loading) {
 
     return (
-      //////loading state with Activity Indicator
-      <View style={styles.loadingContainer}>
+      <View
+        style={
+          styles.loadingContainer
+        }
+      >
+
         <ActivityIndicator
           size="large"
-          color="#000000"
+          color="#000"
         />
-        <Text style={styles.loadingText}>
+
+        <Text
+          style={
+            styles.loadingText
+          }
+        >
           Loading Audio...
         </Text>
+
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+
       <FlatList
         data={audioFiles}
-        keyExtractor={(item) => item.id}
+
+        keyExtractor={(item) =>
+          item.id
+        }
+
         renderItem={renderItem}
+
         contentContainerStyle={{
           paddingBottom: 100,
         }}
+
         initialNumToRender={10}
-        maxToRenderPerBatch={10}
+        maxToRenderPerBatch={8}
         windowSize={5}
-        removeClippedSubviews={true}
+        removeClippedSubviews={
+          true
+        }
       />
+
     </View>
   );
 };
@@ -191,51 +260,67 @@ const Audios = () => {
 export default Audios;
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     padding: 10,
     backgroundColor: '#F2F2F2',
   },
+
   audioCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent:
+      'space-between',
+
     padding: 15,
+
     borderWidth: 2,
+
     borderRadius: 10,
+
     marginBottom: 8,
-    borderColor: '#d2d2d2'
+
+    borderColor: '#d2d2d2',
   },
+
   selectedCard: {
     opacity: 0.7,
   },
+
   leftContent: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+
   icon: {
     width: 30,
     height: 30,
     marginRight: 12,
   },
+
   textContainer: {
     flex: 1,
   },
+
   audioTitle: {
     fontSize: 15,
     fontWeight: '600',
   },
+
   audioInfo: {
     marginTop: 4,
     color: 'gray',
     fontSize: 13,
   },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   loadingText: {
     marginTop: 10,
     fontSize: 16,
