@@ -77,7 +77,6 @@ const PhotoRow = memo(({
             }
             activeOpacity={0.8}
           >
-
             <Image
               source={photo.uri}
               style={[
@@ -95,7 +94,6 @@ const PhotoRow = memo(({
                 styles.checkboxContainer
               }
             >
-
               <Checkbox
                 value={isSelected}
                 onValueChange={() =>
@@ -107,7 +105,6 @@ const PhotoRow = memo(({
                     : undefined
                 }
               />
-
             </View>
 
           </TouchableOpacity>
@@ -122,18 +119,14 @@ const Photos = ({
   selectedFiles,
   setSelectedFiles,
 }) => {
-
   const [sections, setSections] =
     useState([]);
-
   const [loading, setLoading] =
     useState(true);
-
   const [
     loadingMore,
     setLoadingMore,
   ] = useState(false);
-
   const [endCursor, setEndCursor] =
     useState(null);
 
@@ -146,25 +139,19 @@ const Photos = ({
   const getPhotos = async (
     after = null
   ) => {
-
     try {
-
       if (after) {
         setLoadingMore(true);
       } else {
         setLoading(true);
       }
-
       const { status } =
         await MediaLibrary.requestPermissionsAsync();
-
       if (status !== 'granted') {
-
         Alert.alert(
           'Permission Denied',
           'Please allow media access.'
         );
-
         return;
       }
 
