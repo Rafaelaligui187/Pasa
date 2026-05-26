@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View, Switch } from 'react-native'
+import { StyleSheet, Text, View, Switch, Button } from 'react-native'
 import React, { useState } from 'react';
 import DefaultHeader from '../../../components/DefaultHeader'
-import Footer from '../../../components/Footer';
+
+import CustomButton from '../../../components/CustomButton';
 
 const Hotspot = ({navigation}) => {
   const [isEnabled, setIsEnabled] = useState(false);
@@ -23,6 +24,8 @@ const Hotspot = ({navigation}) => {
         />
       </View>
       
+      
+      <CustomButton style={styles.btn} textColor={'white'} backgroundColor={'#5B5B5B'} title="Cancel"/>
     </View>
   )
 }
@@ -49,5 +52,8 @@ const styles = StyleSheet.create({
     fontSize: 16,                  // Shrunk slightly so text does not wrap poorly next to the switch
     flex: 1,                       // Allows text to use leftover space safely
     marginRight: 10,               // Adds a gap between text and switch
+  },
+  btn:{
+    
   }
 })
