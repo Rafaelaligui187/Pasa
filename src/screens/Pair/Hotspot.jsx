@@ -23,9 +23,20 @@ const Hotspot = ({navigation}) => {
           value={isEnabled}                                 
         />
       </View>
-      
-      
-      <CustomButton style={styles.btn} textColor={'white'} backgroundColor={'#5B5B5B'} title="Cancel"/>
+
+      {/* Next btn */}
+      <CustomButton 
+      style={styles.btn}
+      title="Next" 
+      textColor={'white'}
+      backgroundColor={'#5B5B5B'}
+      onPress={() => navigation.goBack()}/>
+      {/* Cancel btn */}
+      <CustomButton 
+      style={styles.btn}
+      title="Cancel" 
+      backgroundColor={'#BDBDBD'}
+      onPress={() => navigation.goBack()}/>
     </View>
   )
 }
@@ -55,5 +66,8 @@ const styles = StyleSheet.create({
   },
   btn:{
     
+    borderRadius: 5,
+    width: '90%',
+    alignSelf: 'center',
   }
 })
