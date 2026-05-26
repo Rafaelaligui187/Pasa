@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View, Switch, Button } from 'react-native'
+import { StyleSheet, Text, View, Switch, Button, Image } from 'react-native'
 import React, { useState } from 'react';
 import DefaultHeader from '../../../components/DefaultHeader'
 
 import CustomButton from '../../../components/CustomButton';
 
-const Hotspot = ({navigation}) => {
+const SwitchHotspot = ({navigation}) => {
   const [isEnabled, setIsEnabled] = useState(false);
   const toggleSwitch = () => setIsEnabled(previousState => !previousState);
 
@@ -15,6 +15,8 @@ const Hotspot = ({navigation}) => {
       <View style={styles.box}>
         {/* Put text first so it sits on the left */}
         <Text style={styles.txt}>To proceed please turn on your Hotspot</Text>
+        <Image style={styles.img} source={require('../../../assets/Images/hotspot_icon.png')}/>
+        
         <Switch 
           trackColor={{ false: '#7c7c7c', true: '#000000' }} 
           thumbColor={isEnabled ? '#ffffff' : '#f4f3f4'}    
@@ -26,22 +28,28 @@ const Hotspot = ({navigation}) => {
 
       {/* Next btn */}
       <CustomButton 
-      style={styles.btn}
-      title="Next" 
-      textColor={'white'}
-      backgroundColor={'#5B5B5B'}
-      onPress={() => navigation.goBack()}/>
+        style={styles.btn}
+        title="Next" 
+        textColor={'white'}
+        // 1. Changes color to gray (#BDBDBD) if switch is off, black/dark gray (#5B5B5B) if on
+        backgroundColor={isEnabled ? '#5B5B5B' : '#BDBDBD'}
+        // 2. Disables the button if isEnabled is false
+        disabled={!isEnabled}
+        onPress={() => navigation.navigate('NextScreen')} // Changed to navigate forward instead of goBack
+      />
+      
       {/* Cancel btn */}
       <CustomButton 
-      style={styles.btn}
-      title="Cancel" 
-      backgroundColor={'#BDBDBD'}
-      onPress={() => navigation.goBack()}/>
+        style={styles.btn}
+        title="Cancel" 
+        backgroundColor={'#BDBDBD'}
+        onPress={() => navigation.goBack()}
+      />
     </View>
   )
 }
 
-export default Hotspot
+export default SwitchHotspot
 
 const styles = StyleSheet.create({
   container: {
@@ -49,25 +57,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   box:{
-    flexDirection: 'row',          // Places items side-by-side
-    justifyContent: 'space-between', // Pushes items to opposite sides
-    alignItems: 'center',          // Centers items vertically
+    flexDirection: 'row',          
+    justifyContent: 'space-between', 
+    alignItems: 'center',          
     borderWidth: 1,
     borderColor: '#D2D2D2',
-    paddingHorizontal: 15,         // Adds nice spacing inside the sides
+    paddingHorizontal: 15,         
     paddingVertical: 10,    
-    marginTop: 30,       // Removed fixed height so content fits well
+    marginTop: 30,       
+    marginBottom: 20, // Added space below the box before the buttons start
   },
   txt:{
     fontFamily: 'Poppins',
-    fontSize: 16,                  // Shrunk slightly so text does not wrap poorly next to the switch
-    flex: 1,                       // Allows text to use leftover space safely
-    marginRight: 10,               // Adds a gap between text and switch
+    fontSize: 16,                  
+    flex: 1,                       
+    marginRight: 10,               
   },
   btn:{
-    
     borderRadius: 5,
     width: '90%',
     alignSelf: 'center',
+    marginBottom: 10, // Added spacing between the two buttons
+  },
+  img: {
+    width: 25,    
+    height: 25,
+    marginRight: 30,
   }
 })
