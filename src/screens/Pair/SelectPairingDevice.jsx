@@ -25,11 +25,12 @@ const SelectPairingDevice = ({navigation}) => {
       textColor={'white'}
       onPress={() => navigation.navigate('SwitchHotspotAndWifi')}
       />
+
       {/* Connect with PC BTN */}
       <CustomButton style={styles.btn} 
       backgroundColor={'#d3d3d3'} 
       title="Connect with PC(WIP coming soon)"
-      textColor={'black'}
+      textColor={'grey'}
       />
 
       {/* Cancel btn */}
