@@ -21,7 +21,8 @@ import Videos from '../src/screens/categories/Videos';
 
 //Imported Pairs Screen
 import Wifi from '../src/screens/Pair/Wifi';
-import SwitchHotspot from '../src/screens/Pair/SwitchHotspot';
+import SwitchHotspotAndWifi from './screens/Pair/SwitchHotspotAndWifi';
+import SelectPairingDevice from '../src/screens/Pair/SelectPairingDevice'
 
 const Stack = createNativeStackNavigator();
 
@@ -63,8 +64,9 @@ export default function App() {
 
         {/* Pair Screens */}
         <Stack.Screen name="Wifi" component={Wifi} options={{ headerShown: false }}/>
-        <Stack.Screen name="SwitchHotspot" component={SwitchHotspot} options={{ headerShown: false }}/>
-        
+        <Stack.Screen name="SwitchHotspotAndWifi" component={SwitchHotspotAndWifi} options={{ headerShown: false }}/>
+        <Stack.Screen name="SelectPairingDevice" component={SelectPairingDevice} options={{ headerShown: false}}/>
+
       </Stack.Navigator>
     </NavigationContainer>
   );

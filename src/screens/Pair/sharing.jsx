@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 
-const sharing = () => {
+const Sharing = () => {
   return (
     <View>
-      <Text>sharing</Text>
+      <Text>Sharing</Text>
     </View>
   )
 }
 
-export default sharing
+export default Sharing
 
 const styles = StyleSheet.create({})

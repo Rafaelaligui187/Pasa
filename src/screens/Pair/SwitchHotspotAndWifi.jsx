@@ -4,19 +4,18 @@ import DefaultHeader from '../../../components/DefaultHeader'
 
 import CustomButton from '../../../components/CustomButton';
 
-const SwitchHotspot = ({navigation}) => {
+const SwitchHotspotAndWifi = ({navigation}) => {
   const [isEnabled, setIsEnabled] = useState(false);
   const toggleSwitch = () => setIsEnabled(previousState => !previousState);
 
   return (
     <View style={styles.container}>
       <DefaultHeader/>
-      {/* In this area user must turn on Hotsoot */}
       <View style={styles.box}>
         {/* Put text first so it sits on the left */}
-        <Text style={styles.txt}>To proceed please turn on your Hotspot</Text>
+        <Text style={styles.txt}>Hotspot</Text>
         <Image style={styles.img} source={require('../../../assets/Images/hotspot_icon.png')}/>
-        
+        <Text>Please turn on this</Text>
         <Switch 
           trackColor={{ false: '#7c7c7c', true: '#000000' }} 
           thumbColor={isEnabled ? '#ffffff' : '#f4f3f4'}    
@@ -25,7 +24,7 @@ const SwitchHotspot = ({navigation}) => {
           value={isEnabled}                                 
         />
       </View>
-
+      
       {/* Next btn */}
       <CustomButton 
         style={styles.btn}
@@ -49,7 +48,7 @@ const SwitchHotspot = ({navigation}) => {
   )
 }
 
-export default SwitchHotspot
+export default SwitchHotspotAndWifi
 
 const styles = StyleSheet.create({
   container: {
