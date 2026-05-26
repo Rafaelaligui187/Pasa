@@ -19,6 +19,10 @@ import FileBrowser from './screens/categories/FileBrowser';
 import Audios from '../src/screens/categories/Audios';
 import Videos from '../src/screens/categories/Videos';
 
+//Imprted Pairs Screen
+import Wifi from '../src/screens/Pair/Wifi';
+import Hotspot from '../src/screens/Pair/Hotspot';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -56,6 +60,11 @@ export default function App() {
         <Stack.Screen name="Audios" component={Audios} options={{ headerShown: false }}/>
         <Stack.Screen name="Videos" component={Videos} options={{ headerShown: false }}/>
         <Stack.Screen name="FileBrowser" component={FileBrowser} options={{ headerShown: false }}/>
+
+        {/* Pair Screens */}
+        <Stack.Screen name="Wifi" component={Wifi} options={{ headerShown: false }}/>
+        <Stack.Screen name="Hotspot" component={Hotspot} options={{ headerShown: false }}/>
+        
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -7,9 +7,7 @@ import React from 'react';
 
 import CustomButton from '../components/CustomButton';
 
-import {
-  useNavigation,
-} from '@react-navigation/native';
+import {useNavigation,} from '@react-navigation/native';
 
 const Footer = ({
   selectedCount = 0,

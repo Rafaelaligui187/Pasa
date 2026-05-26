@@ -12,52 +12,23 @@ import {
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
-const Header = ({ selected, setSelected }) => {
+const DefaultHeader = ({ selected, setSelected }) => {
   ///make sure thse categories are the same as the screen to worksr
   const categories = ['Photos',  'Audios', 'Videos', ]; ///Add 'Files' 'Docs' and 'Apps' soon
   
   return (
     <SafeAreaView>
       <View style={styles.container}>
-
         <Image
           style={styles.logo}
           source={require('../assets/icon.png')}
         />
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-        >
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              onPress={() => setSelected(cat)}
-              style={styles.categoryBtn}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  selected === cat && styles.selectedText
-                ]}
-              >
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <TextInput
-          placeholder="Search..."
-          style={styles.searchInput}
-        />
-
       </View>
     </SafeAreaView>
   );
 };
 
-export default Header
+export default DefaultHeader
 
 const styles = StyleSheet.create({
   container:{

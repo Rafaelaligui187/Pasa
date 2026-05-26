@@ -398,11 +398,11 @@ const Videos = ({
         extraData={selectedFiles} 
 
         // PERFORMANCE
-        initialNumToRender={6}
-        maxToRenderPerBatch={4}
-        windowSize={3}
-        updateCellsBatchingPeriod={50}
-        removeClippedSubviews={true}
+        initialNumToRender={18} ///default-> 6
+        maxToRenderPerBatch={12}///default-> 4
+        windowSize={7}///default-> 3 
+        updateCellsBatchingPeriod={30}///default->50
+        removeClippedSubviews={false}///default-> true
 
         // LOAD MORE
         onEndReached={loadMore}
