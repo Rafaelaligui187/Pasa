@@ -368,21 +368,15 @@ const Photos = ({
         }
 
         // PERFORMANCE
-        initialNumToRender={9}
-        maxToRenderPerBatch={6}
-        windowSize={3}
-        removeClippedSubviews={
-          true
-        }
-        updateCellsBatchingPeriod={
-          50
-        }
+        initialNumToRender={18}
+        maxToRenderPerBatch={12}
+        windowSize={7}
+        removeClippedSubviews={false}
+        updateCellsBatchingPeriod={30}
 
         // LOAD MORE
         onEndReached={loadMore}
-        onEndReachedThreshold={
-          0.3
-        }
+        onEndReachedThreshold={0.3}
 
         ListFooterComponent={
           loadingMore ? (

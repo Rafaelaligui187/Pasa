@@ -14,6 +14,6 @@ Categories
 #File-> Access restricted -> This directory is protected by Android Scope Storage. Exploring sandbox instead and "Back btn" react at statusBar in APp.jsx
 #VIdeos -> slow loading files
 
-
+TODO
 Sender must turn on -> WIFI
 Receiver must turn on -> Hostpot
