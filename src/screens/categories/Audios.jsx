@@ -270,17 +270,11 @@ const styles = StyleSheet.create({
   audioCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent:
-      'space-between',
-
+    justifyContent:'space-between',
     padding: 15,
-
     borderWidth: 2,
-
     borderRadius: 10,
-
     marginBottom: 8,
-
     borderColor: '#d2d2d2',
   },
 
