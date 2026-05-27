@@ -1,245 +1,351 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+
 import {
-  View,
-  Text,
   StyleSheet,
+  Text,
+  View,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
-  BackHandler,
+  Image,
 } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { useRoute, useNavigation } from '@react-navigation/native';
+
+import RNFS from 'react-native-fs';
+
+import {
+  useRoute,
+  useNavigation,
+} from '@react-navigation/native';
 
 const FileBrowser = () => {
+
   const route = useRoute();
-  const navigation = useNavigation();
 
-  // FIX: Default fallback points directly to Expo's allowed public sandboxed directory
-  const { 
-    rootPath = FileSystem.documentDirectory, 
-    storageName = 'Internal Storage' 
-  } = route.params || {};
+  const navigation =
+    useNavigation();
 
-  const [currentPath, setCurrentPath] = useState(rootPath);
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState([]); 
+  const {
+    rootPath,
+    storageName,
+  } = route.params;
 
-  const readDirectoryContents = async (path) => {
-    try {
-      setLoading(true);
-      const formattedPath = path.endsWith('/') ? path : `${path}/`;
-      
-      const fileNames = await FileSystem.readDirectoryAsync(formattedPath);
-      
-      const detailedItems = await Promise.all(
-        fileNames.map(async (name) => {
-          const itemUri = `${formattedPath}${name}`;
-          try {
-            const info = await FileSystem.getInfoAsync(itemUri);
-            return {
-              name,
-              uri: itemUri,
-              isDirectory: info.isDirectory,
-              size: info.size,
-            };
-          } catch {
-            return { name, uri: itemUri, isDirectory: false, size: null };
-          }
-        })
-      );
+  const [currentPath, setCurrentPath] =
+    useState(rootPath);
 
-      detailedItems.sort((a, b) => b.isDirectory - a.isDirectory || a.name.localeCompare(b.name));
+  const [files, setFiles] =
+    useState([]);
 
-      setItems(detailedItems);
-      setCurrentPath(formattedPath);
-    } catch (error) {
-      Alert.alert(
-        'Access Restricted', 
-        'This directory is protected by Android Scoped Storage. Exploring sandbox instead.'
-      );
-      // Fallback seamlessly to the accessible app document directory
-      if (path !== FileSystem.documentDirectory) {
-        readDirectoryContents(FileSystem.documentDirectory);
+  const [loading, setLoading] =
+    useState(true);
+
+  // LOAD DIRECTORY
+  const loadFiles =
+    async (path) => {
+
+      try {
+
+        setLoading(true);
+
+        const items =
+          await RNFS.readDir(
+            path
+          );
+
+        // SORT FOLDERS FIRST
+        const sorted =
+          items.sort((a, b) => {
+
+            if (
+              a.isDirectory() &&
+              !b.isDirectory()
+            ) {
+              return -1;
+            }
+
+            if (
+              !a.isDirectory() &&
+              b.isDirectory()
+            ) {
+              return 1;
+            }
+
+            return a.name.localeCompare(
+              b.name
+            );
+          });
+
+        setFiles(sorted);
+
+        setCurrentPath(path);
+
+      } catch (error) {
+
+        console.log(error);
+
+      } finally {
+
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   useEffect(() => {
-    readDirectoryContents(rootPath);
-  }, [rootPath]);
+    loadFiles(rootPath);
+  }, []);
 
-  const handleGoBack = useCallback(() => {
-    if (history.length > 0) {
-      const newHistory = [...history];
-      const previousPath = newHistory.pop();
-      setHistory(newHistory);
-      readDirectoryContents(previousPath);
-      return true;
-    } else {
+  // OPEN ITEM
+  const handlePress =
+    async (item) => {
+
+      if (
+        item.isDirectory()
+      ) {
+
+        loadFiles(item.path);
+
+      } else {
+
+        console.log(
+          'FILE:',
+          item.path
+        );
+      }
+    };
+
+  // GO BACK
+  const goBackFolder = () => {
+
+    if (
+      currentPath ===
+      rootPath
+    ) {
+
       navigation.goBack();
-      return true;
-    }
-  }, [history, navigation]);
 
-  // FIX: Updated to use the modern subscription pattern for BackHandler
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', handleGoBack);
-    
-    // Correct teardown using subscription object instead of deprecated removeEventListener
-    return () => subscription.remove(); 
-  }, [handleGoBack]);
-
-  const handleItemPress = (item) => {
-    if (item.isDirectory) {
-      setHistory((prev) => [...prev, currentPath]);
-      readDirectoryContents(item.uri);
-    } else {
-      const sizeMB = item.size ? (item.size / (1024 * 1024)).toFixed(2) : '0.00';
-      Alert.alert('File Picked', `Name: ${item.name}\nSize: ${sizeMB} MB`);
+      return;
     }
+
+    const newPath =
+      currentPath.substring(
+        0,
+        currentPath.lastIndexOf('/')
+      );
+
+    loadFiles(newPath);
   };
 
-  const renderBrowserItem = ({ item }) => (
-    <TouchableOpacity style={styles.itemRow} onPress={() => handleItemPress(item)}>
-      <Text style={styles.itemIcon}>{item.isDirectory ? '📁' : '📄'}</Text>
-      <View style={styles.itemTextContainer}>
-        <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-        {!item.isDirectory && item.size && (
-          <Text style={styles.itemMeta}>{(item.size / 1024).toFixed(1)} KB</Text>
-        )}
+  // FILE ITEM
+  const renderItem = ({
+    item,
+  }) => {
+
+    const isFolder =
+      item.isDirectory();
+
+    return (
+      <TouchableOpacity
+        style={styles.fileItem}
+        onPress={() =>
+          handlePress(item)
+        }
+        activeOpacity={0.7}
+      >
+
+        {/* ICON */}
+        <Image
+          source={
+            isFolder
+              ? require('../../../assets/Images/folder_icon.png')
+              : require('../../../assets/Images/folder_icon.png')
+          }
+          style={styles.icon}
+        />
+
+        {/* INFO */}
+        <View style={styles.info}>
+
+          <Text
+            numberOfLines={1}
+            style={styles.name}
+          >
+            {item.name}
+          </Text>
+
+          <Text
+            numberOfLines={1}
+            style={styles.path}
+          >
+            {item.path}
+          </Text>
+
+        </View>
+
+      </TouchableOpacity>
+    );
+  };
+
+  // LOADING
+  if (loading) {
+
+    return (
+      <View style={styles.loading}>
+
+        <ActivityIndicator
+          size="large"
+          color="#000"
+        />
+
+        <Text
+          style={{
+            marginTop: 10,
+          }}
+        >
+          Loading files...
+        </Text>
+
       </View>
-      <Text style={styles.arrowIcon}>›</Text>
-    </TouchableOpacity>
-  );
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerBar}>
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Text style={styles.backButtonText}>⬅ Back</Text>
-        </TouchableOpacity>
-        <View style={styles.headerTitleGroup}>
-          <Text style={styles.storageTitle}>{storageName}</Text>
-          <Text style={styles.pathHeader} numberOfLines={1} ellipsizeMode="head">
-            {currentPath}
+
+      {/* TOP BAR */}
+      <View style={styles.topBar}>
+
+        <TouchableOpacity
+          onPress={goBackFolder}
+        >
+
+          <Text style={styles.backBtn}>
+            ← Back
           </Text>
-        </View>
+
+        </TouchableOpacity>
+
+        <Text
+          numberOfLines={1}
+          style={styles.title}
+        >
+          {storageName}
+        </Text>
+
       </View>
 
-      {loading ? (
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" color="#4630EB" />
-          <Text style={styles.loadingText}>Reading structural path nodes...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.uri}
-          renderItem={renderBrowserItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.centeredContainer}>
-              <Text style={styles.emptyText}>This directory folder is empty.</Text>
-            </View>
-          }
-        />
-      )}
+      {/* CURRENT PATH */}
+      <Text
+        numberOfLines={2}
+        style={styles.currentPath}
+      >
+        {currentPath}
+      </Text>
+
+      {/* FILES */}
+      <FlatList
+        data={files}
+        renderItem={renderItem}
+        keyExtractor={item =>
+          item.path
+        }
+        contentContainerStyle={{
+          paddingBottom: 100,
+        }}
+        initialNumToRender={20}
+        maxToRenderPerBatch={15}
+        windowSize={7}
+        removeClippedSubviews
+      />
+
     </View>
   );
 };
 
 export default FileBrowser;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-    backgroundColor: '#f8f9fa',
-  },
-  backButton: {
-    backgroundColor: '#4630EB',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  headerTitleGroup: {
-    flex: 1,
-  },
-  storageTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2d3436',
-  },
-  pathHeader: {
-    fontSize: 11,
-    color: '#7f8c8d',
-    marginTop: 2,
-  },
-  listContent: {
-    paddingHorizontal: 10,
-    paddingBottom: 40,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5f6fa',
-  },
-  itemIcon: {
-    fontSize: 24,
-    marginRight: 14,
-  },
-  itemTextContainer: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#2c3e50',
-  },
-  itemMeta: {
-    fontSize: 11,
-    color: '#95a5a6',
-    marginTop: 2,
-  },
-  arrowIcon: {
-    fontSize: 20,
-    color: '#b2bec3',
-  },
-  centeredContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 100,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: '#666',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#95a5a6',
-  },
-});
+const styles =
+  StyleSheet.create({
+
+    container: {
+      flex: 1,
+      backgroundColor:
+        '#F2F2F2',
+    },
+
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 15,
+      paddingTop: 50,
+      paddingBottom: 15,
+      backgroundColor:
+        '#FFF',
+      borderBottomWidth: 1,
+      borderBottomColor:
+        '#E5E5E5',
+    },
+
+    backBtn: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#000',
+      marginRight: 15,
+    },
+
+    title: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#111',
+    },
+
+    currentPath: {
+      fontSize: 11,
+      color: '#666',
+      paddingHorizontal: 15,
+      paddingVertical: 10,
+    },
+
+    fileItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 15,
+      paddingVertical: 12,
+      backgroundColor: '#FFF',
+      borderBottomWidth: 1,
+      borderBottomColor:
+        '#F0F0F0',
+    },
+
+    icon: {
+      width: 35,
+      height: 35,
+      resizeMode: 'contain',
+      marginRight: 12,
+    },
+
+    info: {
+      flex: 1,
+    },
+
+    name: {
+      fontSize: 15,
+      color: '#111',
+      fontWeight: '500',
+    },
+
+    path: {
+      fontSize: 11,
+      color: '#777',
+      marginTop: 3,
+    },
+
+    loading: {
+      flex: 1,
+      justifyContent:
+        'center',
+      alignItems: 'center',
+    },
+
+  });

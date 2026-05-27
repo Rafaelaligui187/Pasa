@@ -11,9 +11,13 @@ import {
   View,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
+  PermissionsAndroid,
+  Platform,
+  Alert,
 } from 'react-native';
 
-import * as FileSystem from 'expo-file-system';
+import RNFS from 'react-native-fs';
 
 import Checkbox from 'expo-checkbox';
 
@@ -26,53 +30,151 @@ const Docs = ({
   const [docs, setDocs] =
     useState([]);
 
-  // LOAD DOCUMENTS
+  const [loading, setLoading] =
+    useState(true);
+
+  // DOC TYPES
+  const supportedDocs = [
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.txt',
+    '.ppt',
+    '.pptx',
+    '.xls',
+    '.xlsx',
+  ];
+
+  // REQUEST STORAGE PERMISSION
+  const requestPermission =
+    async () => {
+
+      if (
+        Platform.OS !== 'android'
+      ) {
+        return true;
+      }
+
+      try {
+
+        const granted =
+          await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS
+              .READ_EXTERNAL_STORAGE
+          );
+
+        return (
+          granted ===
+          PermissionsAndroid.RESULTS
+            .GRANTED
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+        return false;
+      }
+    };
+
+  // RECURSIVE SCAN
+  const scanFolder =
+    async (
+      path,
+      collected = []
+    ) => {
+
+      try {
+
+        const items =
+          await RNFS.readDir(
+            path
+          );
+
+        for (const item of items) {
+
+          // FOLDER
+          if (
+            item.isDirectory()
+          ) {
+
+            await scanFolder(
+              item.path,
+              collected
+            );
+
+          }
+
+          // FILE
+          else {
+
+            const isDoc =
+              supportedDocs.some(
+                ext =>
+                  item.name
+                    .toLowerCase()
+                    .endsWith(ext)
+              );
+
+            if (isDoc) {
+
+              collected.push({
+                id: item.path,
+                name: item.name,
+                uri: item.path,
+                size: item.size,
+                path: item.path,
+              });
+            }
+          }
+        }
+
+      } catch (error) {
+
+        // SILENT FAIL
+        // some folders are protected
+      }
+
+      return collected;
+    };
+
+  // LOAD DOCS
   const loadDocs = async () => {
 
     try {
 
-      const root =
-        FileSystem.documentDirectory;
+      setLoading(true);
 
-      const files =
-        await FileSystem.readDirectoryAsync(
-          root
+      const hasPermission =
+        await requestPermission();
+
+      if (!hasPermission) {
+
+        Alert.alert(
+          'Permission denied'
         );
 
-      const supportedDocs = [
-        '.pdf',
-        '.doc',
-        '.docx',
-        '.txt',
-        '.ppt',
-        '.pptx',
-        '.xls',
-        '.xlsx',
-      ];
+        return;
+      }
 
-      const formattedDocs =
-        files
-          .filter(file => {
+      // MAIN STORAGE
+      const rootPath =
+        RNFS.ExternalStorageDirectoryPath;
 
-            return supportedDocs.some(
-              ext =>
-                file
-                  .toLowerCase()
-                  .endsWith(ext)
-            );
-          })
-          .map(file => ({
-            id: file,
-            name: file,
-            uri: root + file,
-          }));
+      const scannedDocs =
+        await scanFolder(
+          rootPath
+        );
 
-      setDocs(formattedDocs);
+      setDocs(scannedDocs);
 
     } catch (error) {
 
       console.log(error);
 
+    } finally {
+
+      setLoading(false);
     }
   };
 
@@ -80,7 +182,7 @@ const Docs = ({
     loadDocs();
   }, []);
 
-  // FILTER SEARCH
+  // SEARCH FILTER
   const filteredDocs =
     useMemo(() => {
 
@@ -94,7 +196,7 @@ const Docs = ({
 
     }, [docs, searchQuery]);
 
-  // SELECT DOC
+  // TOGGLE SELECT
   const toggleSelect =
     useCallback((doc) => {
 
@@ -152,8 +254,11 @@ const Docs = ({
             {item.name}
           </Text>
 
-          <Text style={styles.docType}>
-            Document
+          <Text
+            numberOfLines={1}
+            style={styles.docPath}
+          >
+            {item.path}
           </Text>
 
         </View>
@@ -173,6 +278,29 @@ const Docs = ({
       </TouchableOpacity>
     );
   };
+
+  // LOADING
+  if (loading) {
+
+    return (
+      <View style={styles.loading}>
+
+        <ActivityIndicator
+          size="large"
+          color="#000"
+        />
+
+        <Text
+          style={{
+            marginTop: 10,
+          }}
+        >
+          Scanning documents...
+        </Text>
+
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -196,6 +324,9 @@ const Docs = ({
           contentContainerStyle={{
             paddingBottom: 100,
           }}
+          initialNumToRender={20}
+          maxToRenderPerBatch={15}
+          windowSize={7}
         />
 
       )}
@@ -236,10 +367,10 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 
-  docType: {
+  docPath: {
     marginTop: 5,
-    color: '#666',
-    fontSize: 13,
+    color: '#777',
+    fontSize: 11,
   },
 
   empty: {
@@ -251,6 +382,12 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#666',
     fontSize: 15,
+  },
+
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
 });
