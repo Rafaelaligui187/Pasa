@@ -6,94 +6,170 @@ import {
   Image,
   SafeAreaView,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
 } from 'react-native';
 
-import React, { useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import React, {
+  useState,
+  useMemo,
+} from 'react';
 
-const Header = ({ selected, setSelected }) => {
-  ///make sure thse categories are the same as the screen to worksr
-  const categories = ['Photos',  'Audios', 'Videos', ]; ///Add 'Files' 'Docs' and 'Apps' soon
-  
+const Header = ({
+  selected,
+  setSelected,
+  searchQuery,
+  setSearchQuery,
+}) => {
+
+  // SAME AS SCREEN CATEGORIES
+  const categories = [
+    'Photos',
+    'Audios',
+    'Videos',
+    'Apps',
+    'Docs',
+    'Files',
+  ];
+
+  // ONLY THESE SUPPORT SEARCH
+  const searchableCategories = [
+    'Apps',
+    'Audios',
+    'Docs',
+    'Files',
+  ];
+
+  // CHECK IF SEARCH ENABLED
+  const isSearchEnabled =
+    searchableCategories.includes(
+      selected
+    );
+
+  // DYNAMIC PLACEHOLDER
+  const placeholder =
+    isSearchEnabled
+      ? `Search ${selected}...`
+      : `Search unavailable for ${selected}`;
+
   return (
     <SafeAreaView>
+
       <View style={styles.container}>
 
+        {/* LOGO */}
         <Image
           style={styles.logo}
           source={require('../assets/icon.png')}
         />
 
+        {/* CATEGORIES */}
         <ScrollView
           horizontal
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            styles.categoryContainer
+          }
         >
           {categories.map((cat) => (
+
             <TouchableOpacity
               key={cat}
-              onPress={() => setSelected(cat)}
+              onPress={() => {
+
+                setSelected(cat);
+
+                // CLEAR SEARCH WHEN CATEGORY CHANGES
+                setSearchQuery('');
+              }}
               style={styles.categoryBtn}
+              activeOpacity={0.7}
             >
+
               <Text
                 style={[
                   styles.categoryText,
-                  selected === cat && styles.selectedText
+
+                  selected === cat &&
+                    styles.selectedText,
                 ]}
               >
                 {cat}
               </Text>
+
             </TouchableOpacity>
           ))}
         </ScrollView>
 
+        {/* SEARCH INPUT */}
+        {isSearchEnabled && (
+
         <TextInput
-          placeholder="Search..."
+          placeholder={placeholder}
+          placeholderTextColor="#999"
           style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
         />
 
+      )}
+
       </View>
+
     </SafeAreaView>
   );
 };
 
-export default Header
+export default Header;
 
 const styles = StyleSheet.create({
-  container:{
+
+  container: {
     alignItems: 'center',
     width: '100%',
     marginTop: 35,
   },
+
   logo: {
     width: 55,
     height: 15,
     left: 20,
+    marginBottom: 10,
     alignSelf: 'flex-start',
   },
-  searchInput:{
-    borderWidth: 1,
-    width: '90%',
-    borderRadius: 5,
-    alignSelf: 'center',
-    borderColor: '#5B5B5B',
+
+  categoryContainer: {
+    paddingHorizontal: 20,
   },
-  categoryText:{
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 25,
-  },
-  categoryBtn:{
+
+  categoryBtn: {
     marginRight: 20,
-    fontSize: 16,
-    color: '#777',
     paddingBottom: 10,
-    textAlign: 'center',
     justifyContent: 'center',
   },
+
+  categoryText: {
+    fontSize: 16,
+    color: '#777',
+  },
+
   selectedText: {
     color: '#000',
     fontWeight: 'bold',
-    textDecorationLine: 'underline'
+    textDecorationLine:
+      'underline',
   },
-})
+
+  searchInput: {
+    borderWidth: 1,
+    width: '90%',
+    borderRadius: 8,
+    borderColor: '#5B5B5B',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginTop: 10,
+    backgroundColor: '#FFF',
+    color: '#000',
+  },
+});

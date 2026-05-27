@@ -18,6 +18,7 @@ import Files from '../src/screens/categories/Files';
 import FileBrowser from './screens/categories/FileBrowser';
 import Audios from '../src/screens/categories/Audios';
 import Videos from '../src/screens/categories/Videos';
+import Docs from '../src/screens/categories/Docs';
 
 //Imported Pairs Screen
 import Wifi from '../src/screens/Pair/Wifi';
@@ -61,6 +62,7 @@ export default function App() {
         <Stack.Screen name="Audios" component={Audios} options={{ headerShown: false }}/>
         <Stack.Screen name="Videos" component={Videos} options={{ headerShown: false }}/>
         <Stack.Screen name="FileBrowser" component={FileBrowser} options={{ headerShown: false }}/>
+        <Stack.Screen name="Docs" component={Docs} options={{ headerShown: false }}/>
 
         {/* Pair Screens */}
         <Stack.Screen name="Wifi" component={Wifi} options={{ headerShown: false }}/>

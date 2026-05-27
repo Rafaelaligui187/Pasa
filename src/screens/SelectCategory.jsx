@@ -17,6 +17,7 @@ import Photos from '../screens/categories/Photos';
 import Files from '../screens/categories/Files';
 import Audios from '../screens/categories/Audios';
 import Videos from '../screens/categories/Videos';
+import Docs from '../screens/categories/Docs';
 
 const SelectCategory = () => {
 
@@ -25,19 +26,27 @@ const SelectCategory = () => {
     setSelectedCategory,
   ] = useState('Photos');
 
+  // SEARCH QUERY
+  const [
+    searchQuery,
+    setSearchQuery,
+  ] = useState('');
+
   // GLOBAL SELECTED FILES
   const [
     selectedFiles,
     setSelectedFiles,
   ] = useState([]);
 
+  // SHARED PROPS
+  const sharedProps = {
+    selectedFiles,
+    setSelectedFiles,
+    searchQuery,
+  };
+
   // RENDER SCREEN
   const renderScreen = () => {
-
-    const sharedProps = {
-      selectedFiles,
-      setSelectedFiles,
-    };
 
     switch (selectedCategory) {
 
@@ -65,6 +74,13 @@ const SelectCategory = () => {
       case 'Videos':
         return (
           <Videos
+            {...sharedProps}
+          />
+        );
+
+        case 'Docs':
+        return (
+          <Docs
             {...sharedProps}
           />
         );
@@ -97,6 +113,10 @@ const SelectCategory = () => {
         setSelected={
           setSelectedCategory
         }
+        searchQuery={searchQuery}
+        setSearchQuery={
+          setSearchQuery
+        }
       />
 
       {/* BODY */}
@@ -119,6 +139,7 @@ const SelectCategory = () => {
 export default SelectCategory;
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
   },
@@ -126,4 +147,5 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+
 });
