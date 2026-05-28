@@ -2,7 +2,6 @@
 -Expo Development Build----|________To access device root folder withouth limit
 -react-native-fs-----------|
 
-
 #How to run
 npx expo run:android
 

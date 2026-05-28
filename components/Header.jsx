@@ -24,16 +24,16 @@ const Header = ({
   // SAME AS SCREEN CATEGORIES
   const categories = [
     'Photos',
+    'Applications',
     'Audios',
     'Videos',
-    'Apps',
     'Docs',
     'Files',
   ];
 
   // ONLY THESE SUPPORT SEARCH
   const searchableCategories = [
-    'Apps',
+    'Applications',
     'Audios',
     'Docs',
     'Files',

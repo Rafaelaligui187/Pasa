@@ -18,6 +18,7 @@ import Files from '../screens/categories/Files';
 import Audios from '../screens/categories/Audios';
 import Videos from '../screens/categories/Videos';
 import Docs from '../screens/categories/Docs';
+import Applications from '../screens/categories/Applications';
 
 const SelectCategory = () => {
 
@@ -81,6 +82,13 @@ const SelectCategory = () => {
         case 'Docs':
         return (
           <Docs
+            {...sharedProps}
+          />
+        );
+
+        case 'Applications':
+        return (
+          <Applications
             {...sharedProps}
           />
         );
