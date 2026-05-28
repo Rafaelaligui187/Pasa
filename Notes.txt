@@ -1,55 +1,48 @@
-#NOTE plss user
+===========#NOTE plss use=================
 -Expo Development Build----|________To access device root folder withouth limit
 -react-native-fs-----------|
 
-#How to run
+=======#How to run=============
 npx expo run:android
 
+=======#Reminder=============
 Files.jsx -> Scan Device Storage and SD Card for files and navigate to file browser on click
 FileBrowser.jsx -> Allow user to Explore the storage and open files (for now just log the file path)
 
-==============================================
+===========#To build this project to "APK" copy the command below and paste it to the terminal, just make sure your inside the project============================
 eas build --platform android --profile preview
 
-======================================
-No more information to provide
 
-===========================================
-TO fix
-Categories
-#Photo-> Image acting weird when scanning Image using loading
-#File-> Access restricted -> This directory is protected by Android Scope Storage. Exploring sandbox instead and "Back btn" react at statusBar in APp.jsx
-#VIdeos -> slow loading files
-==========================================
-#No search bar on this following Categories
+==================#To fix=========================
+✓ =Done 
+X =Not done or WIP
+
+UI
+Inside Categories folders
+Applications -> still no Display of installed Apk's on Android device
+Photo-> Image acting weird when scanning Image using loading
+File-> Access restricted -> This directory is protected by Android Scope Storage. Exploring sandbox instead and "Back btn" react at statusBar in APp.jsx
+VIdeos -> Slow loading video files
+Docs -> When heading to Docs categories it says "Permission denied"
+Files -> No storage length "...free of..." and SD card not detected.
+
+
+==========#Categories screen with or without Search bar==========
+With search bar
 -Photo
 -Video
-#Categories with search bar
+Without search bar
 -Audio
 -Docs
 -Files
--Apps
-====================================
-#TODO
+-Apps(Applications)
+
+======#How sharing works==============================
 Sender must turn on -> WIFI
 Receiver must turn on -> Hostpot
 
-=======================================
-#FEATURE for docs.jsx
-NEXT LEVEL IMPROVEMENT
 
-Later you should:
-
-create indexed scan cache
-background scan
-lazy folder loading
-recent docs only
-MediaStore native module
-
-That’s how apps like:
-
-Files by Google
-Mi File Manager
-X-plore File Manager
-
-stay fast.
+===========#FEATURE(for user experience improvement)============================
+#Categories
+1.Photos-> Add a date dropdown. To allow user select specific date of the photos they've takin and for fast searching.
+2.
