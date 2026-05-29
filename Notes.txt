@@ -48,3 +48,13 @@ Receiver must turn on -> Hostpot
 #Categories
 1.Photos-> Add a date dropdown. With this user can select specific date of the photos they've taken and time saving searching.
 2.
+
+
+======#To delete dependencies==============================
+expo-file-system
+expo-linking
+expo-system-ui
+expo-video
+react-dom
+react-native-screens
+
