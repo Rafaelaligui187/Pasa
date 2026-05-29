@@ -54,7 +54,7 @@ Receiver must turn on -> Hostpot
 expo-file-system
 expo-linking
 expo-system-ui
-expo-video
-react-dom
-react-native-screens
+
+
+
 
