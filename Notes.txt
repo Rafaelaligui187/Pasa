@@ -9,28 +9,30 @@ npx expo run:android
 Files.jsx -> Scan Device Storage and SD Card for files and navigate to file browser on click
 FileBrowser.jsx -> Allow user to Explore the storage and open files (for now just log the file path)
 
-===========#To build this project to "APK" copy the command below and paste it to the terminal, just make sure your inside the project============================
+===========#To build this project to "APK" copy the command below and paste it into the terminal, just make sure your inside the project ex.. C:/Desktop/Pasa ============================
 eas build --platform android --profile preview
 
 
 ==================#To fix=========================
-✓ =Done 
-X =Not done or WIP
+✓ = Done 
+X = Not yet
+W = Work in progress (Wip)
 
-UI
-Inside Categories folders
-Applications -> still no Display of installed Apk's on Android device
-Photo-> Image acting weird when scanning Image using loading
-File-> Access restricted -> This directory is protected by Android Scope Storage. Exploring sandbox instead and "Back btn" react at statusBar in APp.jsx
-VIdeos -> Slow loading video files
-Docs -> When heading to Docs categories it says "Permission denied"
-Files -> No storage length "...free of..." and SD card not detected.
+UI Inside Categories folders
+
+X Applications -> still no Display of installed Apk's on Android device
+X Photo-> Image acting weird when scanning Image using loading
+X File-> Access restricted -> This directory is protected by Android Scope Storage. Exploring sandbox instead and "Back btn" react at statusBar in APp.jsx
+X VIdeos -> Slow loading video files
+X Docs -> When heading to Docs categories it says "Permission denied"
+X Files -> No storage length "...free of..." and SD card not detected.
 
 
 ==========#Categories screen with or without Search bar==========
 With search bar
 -Photo
 -Video
+
 Without search bar
 -Audio
 -Docs
@@ -44,5 +46,5 @@ Receiver must turn on -> Hostpot
 
 ===========#FEATURE(for user experience improvement)============================
 #Categories
-1.Photos-> Add a date dropdown. To allow user select specific date of the photos they've takin and for fast searching.
+1.Photos-> Add a date dropdown. With this user can select specific date of the photos they've taken and time saving searching.
 2.
