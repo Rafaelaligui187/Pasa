@@ -16,7 +16,7 @@ eas build --platform android --profile preview
 ==================#To fix=========================
 ✓ = Done 
 X = Not yet
-W = Work in progress (Wip) dd
+W = Work in progress (Wip)
 
 UI Inside Categories folders
 
