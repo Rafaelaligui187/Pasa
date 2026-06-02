@@ -18,7 +18,7 @@ eas build --platform android --profile preview
 X = Not yet
 W = Work in progress (Wip) 
 UI Inside Categories folders
-no more info
+Add more information to noticy
 
 X Applications -> still no Display of installed Apk's on Android device
 X Photo-> Image acting weird when scanning Image using loading
