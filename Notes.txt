@@ -24,7 +24,7 @@ X Applications -> still no Display of installed Apk's on Android device
 X Photo-> Image acting weird when scanning Image using loading
 X File-> Access restricted -> This directory is protected by Android Scope Storage. Exploring sandbox instead and "Back btn" react at statusBar in APp.jsx
 X VIdeos -> Slow loading video files
-X Docs -> When heading to Docs categories it says "Permission denied"
+X Docs (WIP) -> When heading to Docs categories it says "Permission denied"
 X Files -> No storage length "...free of..." and SD card not detected.
 
 

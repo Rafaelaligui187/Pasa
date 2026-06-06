@@ -86,7 +86,6 @@ const Docs = ({ selectedFiles, setSelectedFiles, searchQuery }) => {
         RNFS.DownloadDirectoryPath,
         RNFS.ExternalStorageDirectoryPath + '/Documents',
         RNFS.ExternalStorageDirectoryPath + '/Download',
-        RNFS.ExternalStorageDirectoryPath + '/Books',
         /////Add more public folders if needed
       ];
 
